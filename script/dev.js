@@ -7,7 +7,7 @@ const format = args.f || 'global'
 
 const entry = resolve(__dirname, `../packages/${target}/src/index.ts`)
 
-const pkg = require(resolve(__dirname, `../packages/${target}/package.json`)).buildOptions?.name
+const pkg = require(resolve(__dirname, `../packages/${target}/package.json`))
 
 // iife // 在浏览器环境，所以需要加一个全局变量
 // cjs

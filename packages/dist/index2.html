@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<!-- <script src="../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+		<script src="./reactivity.global.js"></script>
+
+		<div id="app"></div>
+		<script>
+			const { effect, reactive } = VueReactivity
+
+			//会对属性进行劫持proxy，监听用户的获取操作和设置操作
+			const state = reactive({ name: 'wumao', age: 18, add: { a: 1 } }) // 只能传入对象，因为proxy只支持对象
+			console.log(state)
+
+			//effect函数默认会执行一次，后续数据变化了会重新执行effect函数，这tm不是跟react一样吗。。。
+			// effect(() => {
+			// 	app.innerHTML = `姓名：${state.name},年龄${state.age}`
+			// })
+			// setInterval(() => {
+			// 	state.age++
+			// }, 1000)
+		</script>
+	</body>
+</html>
