@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../shared/src/index.ts", "../reactivity/src/index.ts"],
+  "sourcesContent": ["export function isObject (value) {\n  return typeof value === 'object' && value !== null\n}\n", "import { isObject } from '@vue/shared'\n\nconsole.log(isObject(11));"],
+  "mappings": ";;AAAO,oBAAmB,OAAO;AAC/B,WAAO,OAAO,UAAU,YAAY,UAAU;AAAA,EAChD;;;ACAA,UAAQ,IAAI,SAAS,EAAE,CAAC;",
+  "names": []
+}
