@@ -108,30 +108,34 @@ var VueReactivity = (() => {
     return runner;
   }
 
+  // packages/shared/src/index.ts
+  function isObject(value) {
+    return typeof value === "object" && value !== null;
+  }
+
   // packages/reactivity/src/baseHandler.ts
   var baseHandler = {
-    get(target, key, reactive2) {
+    get(target, key, receiver) {
       if (key === "__v_isReactive" /* IS_REACTIVE */) {
         return true;
       }
       track(target, key);
-      return Reflect.get(target, key, reactive2);
+      let res = Reflect.get(target, key, receiver);
+      if (isObject(res)) {
+        return reactive(res);
+      }
+      return res;
     },
-    set(target, key, value, reactive2) {
+    set(target, key, value, receiver) {
       let oldValue = target[key];
       if (oldValue !== value) {
-        let result = Reflect.set(target, key, value, reactive2);
+        let result = Reflect.set(target, key, value, receiver);
         trigger(target, key, value);
         return result;
       }
       return;
     }
   };
-
-  // packages/shared/src/index.ts
-  function isObject(value) {
-    return typeof value === "object" && value !== null;
-  }
 
   // packages/reactivity/src/reactive.ts
   var reactiveMap = /* @__PURE__ */ new WeakMap();
