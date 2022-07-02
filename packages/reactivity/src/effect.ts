@@ -29,7 +29,9 @@ export class ReactiveEffect {
   // constructor(public fn) {
   //   this.fn = fn
   // }
-  constructor(public fn) { }  // 等价上面
+  constructor(public fn) { // 等价上面
+
+  }
 
   run () {
     // 依赖收集 让属性和effect产生关联
@@ -39,7 +41,7 @@ export class ReactiveEffect {
       try {
         this.parent = activeEffect // 2.在effect的回调里面继续使用effect函数是，通过此方法让他们记住当前的实例
         activeEffect = this
-        clearEffect(this) // 3.清除副作用: 清空之前的属性依赖，重新做依赖收集，防止effect的回调函数被多次调用
+        clearEffect(this) // 3.清除副作用: 清空之前的属性依赖，重新做依赖收集，防止effect的回调函数被多次调用 // vue2 vue3都是需要清理的
         return this.fn()  // 去proxy对象 去取值的时候，需要把当前的effect函数关联上去，等到数据更新，effect的函数会继续执行
       } finally {
         // 取消当前正在运行的effect
@@ -47,8 +49,12 @@ export class ReactiveEffect {
         this.parent = null // 2.在effect的回调里面继续使用effect函数是，通过此方法让他们记住当前的实例
       }
     }
-
-
+  }
+  stop () {
+    if (this.active) {
+      this.active = false
+      clearEffect(this)
+    }
   }
 }
 
@@ -100,4 +106,7 @@ export function effect (fn) {
   // 将用户传递的函数变成响应式的effect
   const _effect = new ReactiveEffect(fn)
   _effect.run()
+  const runner = _effect.run.bind(_effect)
+  runner.effect = _effect // 暴露effect的实例
+  return runner // 用户可以手动调用runner重新执行
 }
