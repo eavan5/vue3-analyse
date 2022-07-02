@@ -29,7 +29,7 @@ export class ReactiveEffect {
   // constructor(public fn) {
   //   this.fn = fn
   // }
-  constructor(public fn) { // 等价上面
+  constructor(public fn, public scheduler) { // 等价上面
 
   }
 
@@ -73,7 +73,11 @@ export function trigger (target, key, value) {
     effects = new Set(effects)
     effects && effects.forEach(effect => {
       if (effect !== activeEffect) { // 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
-        effect.run() // 4. 数据变化了，就执行里面的effect
+        if (effect.scheduler) {
+          effect.scheduler() // 可以提供一个调用函数，用户实现自己的逻辑
+        } else {
+          effect.run() // 4. 数据变化了，就执行里面的effect
+        }
       }
     })
   }
@@ -102,9 +106,11 @@ export function track (target, key) {
 
 }
 
-export function effect (fn) {
+export function effect (fn, options: Record<string, any> = {}) {
+
+
   // 将用户传递的函数变成响应式的effect
-  const _effect = new ReactiveEffect(fn)
+  const _effect = new ReactiveEffect(fn, options.scheduler)
   _effect.run()
   const runner = _effect.run.bind(_effect)
   runner.effect = _effect // 暴露effect的实例
