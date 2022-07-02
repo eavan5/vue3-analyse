@@ -8,6 +8,19 @@
 export let activeEffect = undefined
 
 
+function clearEffect (effect) {
+  // debugger
+  // 当执行effect的时候，我们需要重新建立起新的依赖收集，否则会导致重复渲染发生
+  // 所以需要清理effect中存入属性中set中的effect
+
+  // 每次执行前都需要将effect中 对应属性的set集合都清理掉
+  let deps = effect.deps // 存的是每个属性的set
+  for (let i = 0; i < deps.length; i++) {
+    deps[i].delete(effect)
+  }
+  effect.deps.length = 0
+}
+
 
 export class ReactiveEffect {
   public active = true
@@ -26,6 +39,7 @@ export class ReactiveEffect {
       try {
         this.parent = activeEffect // 2.在effect的回调里面继续使用effect函数是，通过此方法让他们记住当前的实例
         activeEffect = this
+        clearEffect(this) // 3.清除副作用: 清空之前的属性依赖，重新做依赖收集，防止effect的回调函数被多次调用
         return this.fn()  // 去proxy对象 去取值的时候，需要把当前的effect函数关联上去，等到数据更新，effect的函数会继续执行
       } finally {
         // 取消当前正在运行的effect
@@ -47,13 +61,16 @@ export function trigger (target, key, value) {
   if (!depsMap) {
     return // 没有依赖任何的effect
   }
-  const effects = depsMap.get(key)
-  effects && effects.forEach(effect => {
-    if (effect !== activeEffect) { // 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
-      effect.run() //数据变化了，就执行里面的effect
-    }
-  })
-
+  let effects = depsMap.get(key)
+  if (effects) {
+    // 4.重新生成一个新的effect，目的是为了防止一边清空依赖 重新执行effect.run() 又添加遍历老的effects导致一边删除一边新增 // index3-分支切换
+    effects = new Set(effects)
+    effects && effects.forEach(effect => {
+      if (effect !== activeEffect) { // 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
+        effect.run() // 4. 数据变化了，就执行里面的effect
+      }
+    })
+  }
 }
 
 export function track (target, key) {
@@ -69,12 +86,12 @@ export function track (target, key) {
     let shouldTrack = !deps.has(activeEffect)
     if (shouldTrack) {
       deps.add(activeEffect)
-      activeEffect.deps.push(deps) // 3.反向收集依赖
+      activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
     }
     // 3.让属性去记住所用到的effect是谁，但是哪个effect对应哪个属性应该也要知道（后期需要一些清理工作）
 
   }
-  console.log(activeEffect, targetMap);
+  // console.log(activeEffect, targetMap);
 
 
 }

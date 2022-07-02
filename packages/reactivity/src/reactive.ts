@@ -1,6 +1,5 @@
 import { baseHandler, ReflectFlags } from './baseHandler'
 import { isObject } from "@vue/shared";
-import { track } from "./effect";
 // import { activeEffect } from "./effect";
 
 const reactiveMap = new WeakMap() // key必须是对象，弱引用
