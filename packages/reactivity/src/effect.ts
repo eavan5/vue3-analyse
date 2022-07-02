@@ -29,7 +29,7 @@ export class ReactiveEffect {
   // constructor(public fn) {
   //   this.fn = fn
   // }
-  constructor(public fn, public scheduler) { // 等价上面
+  constructor(public fn, public scheduler?) { // 等价上面
 
   }
 
@@ -68,6 +68,10 @@ export function trigger (target, key, value) {
     return // 没有依赖任何的effect
   }
   let effects = depsMap.get(key)
+  triggerEffects(effects)
+}
+
+export function triggerEffects (effects) {
   if (effects) {
     // 4.重新生成一个新的effect，目的是为了防止一边清空依赖 重新执行effect.run() 又添加遍历老的effects导致一边删除一边新增 // index3-分支切换
     effects = new Set(effects)
@@ -93,16 +97,18 @@ export function track (target, key) {
     if (!deps) {
       depsMap.set(key, (deps = new Set()))
     }
-    let shouldTrack = !deps.has(activeEffect)
-    if (shouldTrack) {
-      deps.add(activeEffect)
-      activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
-    }
-    // 3.让属性去记住所用到的effect是谁，但是哪个effect对应哪个属性应该也要知道（后期需要一些清理工作）
-
+    trackEffects(deps)
   }
   // console.log(activeEffect, targetMap);
+}
 
+export function trackEffects (deps) {
+  let shouldTrack = !deps.has(activeEffect)
+  if (shouldTrack) {
+    deps.add(activeEffect)
+    activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
+  }
+  // 3.让属性去记住所用到的effect是谁，但是哪个effect对应哪个属性应该也要知道（后期需要一些清理工作）
 
 }
 
