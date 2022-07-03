@@ -6,8 +6,35 @@ export function ref (value) {
   return new RefImpl(value)
 }
 
+export function toRefs (object) {
+  const res = {}
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      res[key] = toRef(object, key)
+    }
+  }
+  return res
+}
+
+export function toRef (object, key) {
+  return new ObjectRefImpl(object, key)
+}
+
 export function toReactive (value) {
   return isObject(value) ? reactive(value) : value
+}
+
+
+class ObjectRefImpl {
+  constructor(public object, public key) {
+
+  }
+  get value () {
+    return this.object[this.key]
+  }
+  set value (newValue) {
+    this.object[this.key] = newValue
+  }
 }
 
 class RefImpl {

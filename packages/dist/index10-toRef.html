@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+	</head>
+	<body>
+		<!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
+		<!-- <script src="../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+		<script src="./reactivity.global.js"></script>
+
+		<div id="app"></div>
+		<script>
+			const { effect, reactive, ref, toRef, toRefs } = VueReactivity
+			const state = reactive({ name: 'Eavan', age: 18, phone: { a: 111 } })
+			let { name, age } = toRefs(state)
+			// const name = toRef(state, 'name') // 刚开始我还以为是toRef(state.name) 这样用，不过要这样实现问题也不大
+			// const age = toRef(state, 'age')
+			effect(() => {
+				app.innerHTML = name.value + age.value
+			})
+		</script>
+	</body>
+</html>

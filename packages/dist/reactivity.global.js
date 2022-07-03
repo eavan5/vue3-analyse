@@ -24,6 +24,9 @@ var VueReactivity = (() => {
     effect: () => effect,
     reactive: () => reactive,
     ref: () => ref,
+    toReactive: () => toReactive,
+    toRef: () => toRef,
+    toRefs: () => toRefs,
     watch: () => watch
   });
 
@@ -227,9 +230,33 @@ var VueReactivity = (() => {
   function ref(value) {
     return new RefImpl(value);
   }
+  function toRefs(object) {
+    const res = {};
+    for (const key in object) {
+      if (Object.prototype.hasOwnProperty.call(object, key)) {
+        res[key] = toRef(object, key);
+      }
+    }
+    return res;
+  }
+  function toRef(object, key) {
+    return new ObjectRefImpl(object, key);
+  }
   function toReactive(value) {
     return isObject(value) ? reactive(value) : value;
   }
+  var ObjectRefImpl = class {
+    constructor(object, key) {
+      this.object = object;
+      this.key = key;
+    }
+    get value() {
+      return this.object[this.key];
+    }
+    set value(newValue) {
+      this.object[this.key] = newValue;
+    }
+  };
   var RefImpl = class {
     constructor(rawValue) {
       this.rawValue = rawValue;
