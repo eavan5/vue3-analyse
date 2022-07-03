@@ -6,6 +6,11 @@ export const enum ReflectFlags {
   IS_REACTIVE = '__v_isReactive'
 }
 
+export function isReactive (value) {
+  return value?.[ReflectFlags.IS_REACTIVE]
+
+}
+
 export const baseHandler = {
   get (target, key, receiver) {
     if (key === ReflectFlags.IS_REACTIVE) { // 1.这边是为了防止一个代理属性被多次代理

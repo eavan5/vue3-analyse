@@ -22,7 +22,8 @@ var VueReactivity = (() => {
   __export(src_exports, {
     computed: () => computed,
     effect: () => effect,
-    reactive: () => reactive
+    reactive: () => reactive,
+    watch: () => watch
   });
 
   // packages/reactivity/src/effect.ts
@@ -124,6 +125,9 @@ var VueReactivity = (() => {
   }
 
   // packages/reactivity/src/baseHandler.ts
+  function isReactive(value) {
+    return value == null ? void 0 : value["__v_isReactive" /* IS_REACTIVE */];
+  }
   var baseHandler = {
     get(target, key, receiver) {
       if (key === "__v_isReactive" /* IS_REACTIVE */) {
@@ -203,6 +207,20 @@ var VueReactivity = (() => {
       this.setter(newValues);
     }
   };
+
+  // packages/reactivity/src/watch.ts
+  function watch(source, cb) {
+    let get;
+    if (isReactive(source)) {
+      get = () => source;
+    }
+    const job = () => {
+      let newValue = effect2.run();
+      cb(newValue, oldValue);
+    };
+    const effect2 = new ReactiveEffect(get, job);
+    let oldValue = effect2.run();
+  }
   return __toCommonJS(src_exports);
 })();
 //# sourceMappingURL=reactivity.global.js.map
