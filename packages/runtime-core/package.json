@@ -1,0 +1,12 @@
+{
+  "name": "@vue/runtime-core",
+  "version": "1.0.0",
+  "main": "dist/runtimeCore.cjs.js",
+  "module": "dist/runtimeCore.esm-bundler.js",
+  "buildOptions": {
+    "name": "VueRuntimeCore"
+  },
+  "dependencies": {
+    "@vue/shared": "workspace:^1.0.0"
+  }
+}

@@ -21,6 +21,21 @@ importers:
     dependencies:
       '@vue/shared': link:../shared
 
+  packages/runtime-core:
+    specifiers:
+      '@vue/shared': workspace:^1.0.0
+    dependencies:
+      '@vue/shared': link:../shared
+
+  packages/runtime-dom:
+    specifiers:
+      '@vue/shared': workspace:^1.0.0
+    dependencies:
+      '@vue/shared': link:../shared
+
+  packages/shared:
+    specifiers: {}
+
 packages:
 
   /@babel/helper-validator-identifier/7.18.6:

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../packages/runtime-dom/src/index.ts"],
+  "sourcesContent": ["export const a = 12121"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAO,MAAM,IAAI;",
+  "names": []
+}

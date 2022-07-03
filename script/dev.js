@@ -15,7 +15,7 @@ const pkg = require(resolve(__dirname, `../packages/${target}/package.json`))
 
 const outputFormat = format.startsWith('global') ? 'iife' : format === 'cjs' ? 'cjs' : 'esm'
 
-const outfile = resolve(__dirname, `../packages/dist/${target}.${format}.js`)
+const outfile = resolve(__dirname, `../packages/${target}/dist/${target}.${format}.js`)
 
 const { build } = require('esbuild')
 
