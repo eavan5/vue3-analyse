@@ -22,6 +22,7 @@ var VueReactivity = (() => {
   __export(src_exports, {
     computed: () => computed,
     effect: () => effect,
+    proxyRefs: () => proxyRefs,
     reactive: () => reactive,
     ref: () => ref,
     toReactive: () => toReactive,
@@ -190,6 +191,7 @@ var VueReactivity = (() => {
     constructor(getter, setter) {
       this.setter = setter;
       this._dirty = true;
+      this.__v_isRef = true;
       this.effect = new ReactiveEffect(getter, () => {
         if (!this._dirty) {
           this._dirty = true;
@@ -242,6 +244,21 @@ var VueReactivity = (() => {
   function toRef(object, key) {
     return new ObjectRefImpl(object, key);
   }
+  function proxyRefs(object) {
+    return new Proxy(object, {
+      get(target, key, receiver) {
+        let r = Reflect.get(target, key, receiver);
+        return r.__v_isRef ? r.value : r;
+      },
+      set(target, key, value, receiver) {
+        if (target[key].__v_isReactive) {
+          target[key].value = value;
+          return true;
+        }
+        return Reflect.set(target, key, value, receiver);
+      }
+    });
+  }
   function toReactive(value) {
     return isObject(value) ? reactive(value) : value;
   }
@@ -249,6 +266,7 @@ var VueReactivity = (() => {
     constructor(object, key) {
       this.object = object;
       this.key = key;
+      this.__v_isRef = true;
     }
     get value() {
       return this.object[this.key];
@@ -260,6 +278,7 @@ var VueReactivity = (() => {
   var RefImpl = class {
     constructor(rawValue) {
       this.rawValue = rawValue;
+      this.__v_isRef = true;
       this._value = toReactive(rawValue);
     }
     get value() {

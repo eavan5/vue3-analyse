@@ -22,6 +22,7 @@ class ComputedRefImpl {
   private _dirty = true;
   public effect
   public deps
+  private __v_isRef = true
   constructor(getter, public setter) {
     // new ReactiveEffect的时候会执行getter，会让getter对应的依赖项去收集当前的计算属性的effect
     this.effect = new ReactiveEffect(getter, () => {
