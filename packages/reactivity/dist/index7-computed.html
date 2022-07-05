@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Document</title>
-	</head>
-	<body>
-		<!-- <script src="../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
-		<script src="./reactivity.global.js"></script>
 
-		<div id="app"></div>
-		<script>
-			const { effect, reactive, computed } = VueReactivity
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
 
-			const state = reactive({ firstName: 'Eavan', lastName: 'Woo' })
+<body>
+  <!-- <script src="../../node_modules/@vue/reactivity/dist/reactivity.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
 
-			const fullName = computed(() => {
-				// dirty   缓存
-				console.log('runner')
-				return state.firstName + ' ' + state.lastName
-			})
+  <div id="app"></div>
+  <script>
+    const { effect, reactive, computed } = VueReactivity
 
-			effect(() => {
-				app.innerHTML = fullName.value
-			})
+    const state = reactive({ firstName: 'Eavan', lastName: 'Woo' })
 
-			setTimeout(() => {
-				state.firstName = 6666
-				console.log(state)
-			}, 1000)
+    const fullName = computed(() => {
+      // dirty   缓存
+      console.log('runner')
+      return state.firstName + ' ' + state.lastName
+    })
+
+    effect(() => {
+      app.innerHTML = fullName.value
+    })
+
+    setTimeout(() => {
+      state.firstName = 6666
+      console.log(state)
+    }, 1000)
 
 			// console.log(fullName.value)
 			// console.log(fullName.value)
@@ -42,6 +44,7 @@
 			// effect
 			// - effectComputed
 			//    -proxy
-		</script>
-	</body>
+  </script>
+</body>
+
 </html>

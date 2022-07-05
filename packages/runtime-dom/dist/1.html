@@ -1,38 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Document</title>
-	</head>
-	<body>
-		<!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
-		<script src="./runtime-dom.global.js"></script>
-		<div id="app"></div>
-		<script>
-			const { render, createRenderer, h } = VueRuntimeDOM
 
-			// 渲染器提供给用户，用户方便有自己的渲染逻辑
-			// const { render, createApp } = createRenderer({
-			// 	// patchProp, // 如何渲染属性
-			// 	// ...nodeOps, // 节点操作1
-			// 	createElement(element) {
-			// 		return document.createElement(element)
-			// 	},
-			// 	setElementText(element, text) {
-			// 		element.textContent = text
-			// 	},
-			// 	insert(element, container) {
-			// 		container.appendChild(element)
-			// 	},
-			// })
-			// render(h('h1', 'hello world'), app)
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
 
-			console.log(h('h1', 'hello world')) // 生成虚拟dom
-			// 渲染器就是为了方便用户扩展，vue中内置了 一些节点操作的方法
-			render(h('h1', 'hello world'), app) // 渲染到页面上
-			// render('h1', 'hello world')
-		</script>
-	</body>
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender } = VueRuntimeDom
+
+    // 渲染器提供给用户，用户方便有自己的渲染逻辑
+    // const { render, createApp } = createRenderer({
+    // 	// patchProp, // 如何渲染属性
+    // 	// ...nodeOps, // 节点操作1
+    // 	createElement(element) {
+    // 		return document.createElement(element)
+    // 	},
+    // 	setElementText(element, text) {
+    // 		element.textContent = text
+    // 	},
+    // 	insert(element, container) {
+    // 		container.appendChild(element)
+    // 	},
+    // })
+    // 不同的参数，决定了不同的内容渲染逻辑
+    // render(h('h1', 'hello world'), app)
+    // 1. 元素 内容
+    // console.log(h('h1', 'hello world')) // 生成虚拟dom
+    // 2. 元素 属性 内容
+    // console.log(h('h1', { style: { col or: 'red' } }, 'hello world'))
+    // 3. 元素 属性  多个儿子
+    // console.log(h('h1', { style: { color: 'red' } }, ['hello world', 'hello world']))
+    // 4. 元素  多个儿子  元素 (只要不是文本节点，都会把儿子转成数组)
+    // console.log(
+    // 	h('h1', { style: { color: 'red' } }, h('span', 'hello world'), h('span', 'hello world'))
+    // )
+    // 5. 元素 空  多个儿子
+    // console.log(h('h1', null, [h('span', 'hello world'), h('span', 'hello world')]))
+
+    // render(h('h1', { style: { color: 'red' } }, 'hello world'), app) // 渲染到页面上
+    // 渲染器就是为了方便用户扩展，vue中内置了 一些节点操作的方法
+    // render('h1', 'hello world')
+
+    console.log(createVNode('h1', { style: { color: 'red' } }, 'hello world')) // 生成虚拟dom
+			// createVNode和h实际上是一样的，只是h是createVNode的一个优化参数的形式
+  </script>
+</body>
+
 </html>

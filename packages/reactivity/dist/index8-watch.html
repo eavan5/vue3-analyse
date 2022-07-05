@@ -1,32 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Document</title>
-	</head>
-	<body>
-		<!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
-		<script src="./reactivity.global.js"></script>
 
-		<div id="app"></div>
-		<script>
-			//watch虽然也是composition api 但是没有放到VueReactivity响应式模块中
-			// const { watch, reactive, computed } = Vue
-			const { watch, reactive, computed } = VueReactivity
-			const state = reactive({ name: 'Eavan', age: 18, phone: { a: 111 } })
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
 
-			// watch如果舰艇的是一个对象，对象是无法拿到新值和老值的，vue2也是一样，因为对象存的是内存地址
-			// vue3中watch监听的是一个对象的时候，默认会深度监控
-			// 如果监听的是某个属性的话，需要写成函数的模式
-			watch(state, (newValue, oldValue) => {
-				console.log(newValue === oldValue)
-			})
+<body>
+  <!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
 
-			setTimeout(() => {
-				state.phone.a++
-			}, 2000)
-		</script>
-	</body>
+  <div id="app"></div>
+  <script>
+    //watch虽然也是composition api 但是没有放到VueReactivity响应式模块中
+    // const { watch, reactive, computed } = Vue
+    const { watch, reactive, computed } = VueReactivity
+    const state = reactive({ name: 'Eavan', age: 18, phone: { a: 111 } })
+
+    // watch如果舰艇的是一个对象，对象是无法拿到新值和老值的，vue2也是一样，因为对象存的是内存地址
+    // vue3中watch监听的是一个对象的时候，默认会深度监控
+    // 如果监听的是某个属性的话，需要写成函数的模式
+    watch(() => state.age, (newValue, oldValue) => {
+      console.log(newValue === oldValue)
+    })
+
+    setTimeout(() => {
+      console.log('++');
+      console.log(state);
+      state.age++
+    }, 2000)
+
+  </script>
+</body>
+
 </html>

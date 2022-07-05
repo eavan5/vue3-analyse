@@ -71,7 +71,7 @@ var VueReactivity = (() => {
     }
   };
   var targetMap = /* @__PURE__ */ new WeakMap();
-  function trigger(target, key, value) {
+  function trigger(target, key) {
     let depsMap = targetMap.get(target);
     if (!depsMap) {
       return;
@@ -125,13 +125,12 @@ var VueReactivity = (() => {
   function isObject(value) {
     return typeof value === "object" && value !== null;
   }
-  function isFunction(value) {
-    return typeof value === "function";
-  }
+  var isFunction = (value) => typeof value === "function";
+  var isArray = Array.isArray;
 
   // packages/reactivity/src/baseHandler.ts
   function isReactive(value) {
-    return value == null ? void 0 : value["__v_isReactive" /* IS_REACTIVE */];
+    return value["__v_isReactive" /* IS_REACTIVE */];
   }
   var baseHandler = {
     get(target, key, receiver) {
@@ -149,7 +148,7 @@ var VueReactivity = (() => {
       let oldValue = target[key];
       if (oldValue !== value) {
         let result = Reflect.set(target, key, value, receiver);
-        trigger(target, key, value);
+        trigger(target, key);
         return result;
       }
       return;
@@ -216,16 +215,19 @@ var VueReactivity = (() => {
 
   // packages/reactivity/src/watch.ts
   function watch(source, cb) {
-    let get;
+    let getter;
     if (isReactive(source)) {
-      get = () => source;
+      getter = () => source;
     }
+    let oldValue;
     const job = () => {
       let newValue = effect2.run();
       cb(newValue, oldValue);
+      oldValue = newValue;
     };
-    const effect2 = new ReactiveEffect(get, job);
-    let oldValue = effect2.run();
+    console.log(getter);
+    const effect2 = new ReactiveEffect(getter, job);
+    oldValue = effect2.run();
   }
 
   // packages/reactivity/src/ref.ts
