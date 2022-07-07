@@ -23,12 +23,10 @@
     // vue3中watch监听的是一个对象的时候，默认会深度监控
     // 如果监听的是某个属性的话，需要写成函数的模式
     watch(() => state.age, (newValue, oldValue) => {
-      console.log(newValue === oldValue)
+      console.log(`新的值是${newValue}，老的值是${oldValue}`);
     })
 
     setTimeout(() => {
-      console.log('++');
-      console.log(state);
       state.age++
     }, 2000)
 

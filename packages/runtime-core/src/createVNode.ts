@@ -51,7 +51,7 @@ export const enum ShapeFlags { // vue3提供的形状标识
 	TELEPORT = 1 << 6, // 空组件 64
 	SUSPENSE = 1 << 7, // 懒加载 128
 	COMPONENT_SHOULD_KEEP_ALIVE = 1 << 8, // 组件需要被保持 256
-	COMPONENT_KEPT_ALIVE = 1 << 9,
+	COMPONENT_KEPT_ALIVE = 1 << 9, // 组件已被保持 512
 	COMPONENT = ShapeFlags.STATEFUL_COMPONENT | ShapeFlags.FUNCTIONAL_COMPONENT,
 }
 

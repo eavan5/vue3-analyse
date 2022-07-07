@@ -1,12 +1,11 @@
 import { isReactive } from './baseHandler'
 import { ReactiveEffect } from './effect'
 
-export function watch(source, cb) {
-	let getter
-	if (isReactive(source)) {
+export function watch(getter, cb) {
+	if (isReactive(getter)) {
 		// 判断是否是响应式对象
-		// 创建一个effect，让effect收集source的所有属性
-		getter = () => source
+		// 创建一个effect，让effect收集getter的所有属性
+		getter = () => getter
 	}
 	let oldValue
 	const job = () => {
@@ -14,7 +13,7 @@ export function watch(source, cb) {
 		cb(newValue, oldValue)
 		oldValue = newValue
 	}
-	console.log(getter)
+	// console.log(getter)
 
 	const effect = new ReactiveEffect(getter, job)
 

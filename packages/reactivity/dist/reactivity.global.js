@@ -34,7 +34,7 @@ var VueReactivity = (() => {
   // packages/reactivity/src/effect.ts
   var activeEffect = void 0;
   function clearEffect(effect2) {
-    let deps = effect2.deps;
+    const { deps } = effect2;
     for (let i = 0; i < deps.length; i++) {
       deps[i].delete(effect2);
     }
@@ -214,10 +214,9 @@ var VueReactivity = (() => {
   };
 
   // packages/reactivity/src/watch.ts
-  function watch(source, cb) {
-    let getter;
-    if (isReactive(source)) {
-      getter = () => source;
+  function watch(getter, cb) {
+    if (isReactive(getter)) {
+      getter = () => getter;
     }
     let oldValue;
     const job = () => {
@@ -225,7 +224,6 @@ var VueReactivity = (() => {
       cb(newValue, oldValue);
       oldValue = newValue;
     };
-    console.log(getter);
     const effect2 = new ReactiveEffect(getter, job);
     oldValue = effect2.run();
   }

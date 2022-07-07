@@ -11,7 +11,7 @@ function clearEffect(effect) {
 	// 所以需要清理effect中存入属性中set中的effect
 
 	// 每次执行前都需要将effect中 对应属性的set集合都清理掉
-	let deps = effect.deps // 存的是每个属性的set
+	const { deps } = effect // 存的是每个属性的set
 	for (let i = 0; i < deps.length; i++) {
 		deps[i].delete(effect)
 	}
@@ -74,7 +74,7 @@ export function triggerEffects(effects) {
 		effects &&
 			effects.forEach(effect => {
 				if (effect !== activeEffect) {
-					// 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
+					// 4 . 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
 					if (effect.scheduler) {
 						effect.scheduler() // 可以提供一个调用函数，用户实现自己的逻辑
 					} else {
