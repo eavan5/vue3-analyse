@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render } = VueRuntimeDOM
+
+
+    render(h('h1', h('span', 'hello world')), app)
+    //比较前后两次创建的虚拟节点，更新差异的内容
+
+    setTimeout(() => {
+      render(h('h1', h('span', 'hello world 123')), app)
+    }, 2000);
+    setTimeout(() => {
+      render(null, app)
+    }, 3000);
+
+
+  </script>
+</body>
+
+</html>

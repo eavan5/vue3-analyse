@@ -1,8 +1,13 @@
+import { createRenderer } from '@vue/runtime-core'
 import { nodeOps } from './nodeOps'
 import { patchProp } from './patchProp'
 
-export * from '@vue/runtime-core'
-
 const renderOptions = { patchProp, ...nodeOps }
 
-console.log(renderOptions)
+// vue内置的渲染器 我们也可以通过createRenderer方法来创建自己的渲染器
+export function render(vnode, container) {
+	let { render } = createRenderer(renderOptions)
+	return render(vnode, container)
+}
+
+export * from '@vue/runtime-core'
