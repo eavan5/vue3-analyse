@@ -16,15 +16,15 @@
     const { h, createVNode, createRender, render } = VueRuntimeDOM
 
 
-    render(h('h1', h('span', 'hello world')), app)
+    render(h('h1', { a: 1, b: 2, style: { color: 'red' }, onClick: () => alert(1) }, [123, h('span', 'hello')]), app)
     //比较前后两次创建的虚拟节点，更新差异的内容
 
-    setTimeout(() => {
-      render(h('h1', h('span', 'hello world 123')), app)
-    }, 2000);
-    setTimeout(() => {
-      render(null, app)
-    }, 3000);
+    // setTimeout(() => {
+    //   render(h('h1', h('span', 'hello world 123')), app)
+    // }, 2000);
+    // setTimeout(() => {
+    //   render(null, app)
+    // }, 3000);
 
 
   </script>

@@ -391,7 +391,7 @@ var VueRuntimeDOM = (() => {
       nextSibling: hostNextSibling,
       setText: hostSetText,
       setElementText: hostSetElementText,
-      PatchProp: hostPatchProp
+      patchProp: hostPatchProp
     } = options;
     function normalizeVNode(children, i) {
       console.log(children[i]);
@@ -406,9 +406,24 @@ var VueRuntimeDOM = (() => {
         patch(null, child, container);
       }
     }
+    function patchProps(oldProps, newProps, el) {
+      oldProps = oldProps || {};
+      newProps = newProps || {};
+      for (let key in newProps) {
+        hostPatchProp(el, key, oldProps[key], newProps[key]);
+      }
+      for (let key in oldProps) {
+        if (newProps[key] == null) {
+          hostPatchProp(el, key, oldProps[key], null);
+        }
+      }
+    }
     function mountElement(vnode, container) {
       let { type, props, children, shapeFlag } = vnode;
       let el = vnode.el = hostCreateElement(type);
+      if (props) {
+        patchProps(null, props, el);
+      }
       if (shapeFlag & 8 /* TEXT_CHILDREN */) {
         hostSetElementText(el, children);
       }
@@ -453,43 +468,6 @@ var VueRuntimeDOM = (() => {
     };
   }
 
-  // packages/runtime-dom/src/nodeOps.ts
-  var nodeOps = {
-    createElement(tagName) {
-      return document.createElement(tagName);
-    },
-    createTextNode(text) {
-      return document.createTextNode(text);
-    },
-    insert(element, container, anchor = null) {
-      container.insertBefore(element, anchor);
-    },
-    remove(child) {
-      const parent = child.parentNode;
-      if (parent) {
-        parent.removeChild(child);
-      }
-    },
-    querySelector(selectors) {
-      return document.querySelector(selectors);
-    },
-    parentNode(child) {
-      return child.parentNode;
-    },
-    nextSibling(child) {
-      return child.nextSibling;
-    },
-    setText(element, text) {
-      element.nodeValue = text;
-    },
-    setElementText(element, text) {
-      element.textContent = text;
-    },
-    PatchProp(element, key, value) {
-      element[key] = value;
-    }
-  };
-
   // packages/runtime-dom/src/modules/patchAttr.ts
   function patchAttr(el, key, nextValue) {
     if (nextValue == null) {
@@ -522,7 +500,7 @@ var VueRuntimeDOM = (() => {
     if (existingInvoker && nextValue) {
       existingInvoker.value = nextValue;
     } else {
-      const eName = eventName.slice(2).toLowCase();
+      const eName = eventName.slice(2).toLowerCase();
       if (nextValue) {
         const invoker = createInvoker(nextValue);
         invokers[eventName] = invoker;
@@ -560,6 +538,41 @@ var VueRuntimeDOM = (() => {
     } else {
       patchAttr(el, key, nextValue);
     }
+  };
+
+  // packages/runtime-dom/src/nodeOps.ts
+  var nodeOps = {
+    createElement(tagName) {
+      return document.createElement(tagName);
+    },
+    createTextNode(text) {
+      return document.createTextNode(text);
+    },
+    insert(element, container, anchor = null) {
+      container.insertBefore(element, anchor);
+    },
+    remove(child) {
+      const parent = child.parentNode;
+      if (parent) {
+        parent.removeChild(child);
+      }
+    },
+    querySelector(selectors) {
+      return document.querySelector(selectors);
+    },
+    parentNode(child) {
+      return child.parentNode;
+    },
+    nextSibling(child) {
+      return child.nextSibling;
+    },
+    setText(element, text) {
+      element.nodeValue = text;
+    },
+    setElementText(element, text) {
+      element.textContent = text;
+    },
+    patchProp
   };
 
   // packages/runtime-dom/src/index.ts

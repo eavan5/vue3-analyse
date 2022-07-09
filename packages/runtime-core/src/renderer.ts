@@ -14,7 +14,7 @@ export function createRenderer(options) {
 		nextSibling: hostNextSibling,
 		setText: hostSetText,
 		setElementText: hostSetElementText,
-		PatchProp: hostPatchProp,
+		patchProp: hostPatchProp,
 	} = options
 
 	function normalizeVNode(children, i) {
@@ -35,7 +35,23 @@ export function createRenderer(options) {
 
 			patch(null, child, container) // 递归渲染子节点
 		}
-	}
+  }
+  
+  function patchProps (oldProps, newProps, el) {
+    oldProps = oldProps || {}
+    newProps = newProps || {}
+    for(let key in newProps) { // 循环新的覆盖老的
+        hostPatchProp(el,key,oldProps[key],newProps[key])
+    }
+
+    for(let key in oldProps) { // 老得没有需要删除
+        if(newProps[key]==null) {
+            hostPatchProp(el,key,oldProps[key],null)
+        }
+      
+    }
+    
+  }
 
 	function mountElement(vnode, container) {
 		// console.log(vnode, container)
@@ -43,7 +59,11 @@ export function createRenderer(options) {
 		let { type, props, children, shapeFlag } = vnode
 		// console.log(type, props, children, shapeFlag)
 		// 因为我们后续需要比对虚拟节点的差异更新页面，所以需要保留对应的真实节点
-		let el = (vnode.el = hostCreateElement(type))
+    let el = (vnode.el = hostCreateElement(type))
+    
+    if (props) { // 如果有属性 就去更新属性 {a:1, b:2} => {c:3}
+      patchProps(null, props,el)
+    }
 
 		// children不是数组就是文本
 		if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {

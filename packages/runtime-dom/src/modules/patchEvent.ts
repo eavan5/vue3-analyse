@@ -16,7 +16,7 @@ export function patchEvent (el, eventName, nextValue) {
     existingInvoker.value = nextValue
   } else {
     // 不存在缓存的情况 addEventListener('click')
-    const eName = eventName.slice(2).toLowCase()
+    const eName = eventName.slice(2).toLowerCase()
     if (nextValue) {
       const invoker = createInvoker(nextValue) // 默认会将第一次的函数绑定到invoker的函数上
       invokers[eventName] = invoker // 缓存invoker

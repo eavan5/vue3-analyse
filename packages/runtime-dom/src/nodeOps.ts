@@ -1,3 +1,4 @@
+import { patchProp } from './patchProp'
 // 创建元素节点 创建文本节点  节点的增删改查 获取父子关系
 
 export const nodeOps = {
@@ -31,7 +32,5 @@ export const nodeOps = {
 	setElementText(element, text) {
 		element.textContent = text // 这边是设置元素节点的内容 类似innerHTML
 	},
-	PatchProp(element, key, value) {
-		element[key] = value
-	},
+	patchProp
 }
