@@ -34,11 +34,16 @@ var VueRuntimeDOM = (() => {
   // packages/runtime-dom/src/index.ts
   var src_exports = {};
   __export(src_exports, {
+    Fragment: () => Fragment,
+    ShapeFlags: () => ShapeFlags,
+    Text: () => Text,
     computed: () => computed,
     createRenderer: () => createRenderer,
     createVNode: () => createVNode,
     effect: () => effect,
     h: () => h,
+    isSameVNode: () => isSameVNode,
+    isVNode: () => isVNode,
     proxyRefs: () => proxyRefs,
     reactive: () => reactive,
     ref: () => ref,
@@ -60,6 +65,7 @@ var VueRuntimeDOM = (() => {
 
   // packages/runtime-core/src/createVNode.ts
   var Text = Symbol("Text");
+  var Fragment = Symbol("Fragment");
   function isVNode(val) {
     return !!val.__v_isVNode;
   }
@@ -478,6 +484,11 @@ var VueRuntimeDOM = (() => {
     function ProcessText(n1, n2, container) {
       if (n1 === null) {
         hostInsert(n2.el = hostCreateTextNode(n2.children), container);
+      } else {
+        const el = n2.el = n1.el;
+        if (n2.children !== n1.children) {
+          hostSetText(el, n2.children);
+        }
       }
     }
     function unmountChildren(children) {
@@ -611,7 +622,17 @@ var VueRuntimeDOM = (() => {
         patchElement(n1, n2);
       }
     }
+    function ProcessFragment(n1, n2, container) {
+      if (n1 === null) {
+        mountChildren(n2.children, container);
+      } else {
+        patchChildren(n1, n2, container);
+      }
+    }
     function unmount(vnode) {
+      if (vnode === Fragment) {
+        return unmountChildren(vnode.children);
+      }
       hostRemove(vnode.el);
     }
     function patch(n1, n2, container, anchor = null) {
@@ -623,6 +644,9 @@ var VueRuntimeDOM = (() => {
       switch (type) {
         case Text:
           ProcessText(n1, n2, container);
+          break;
+        case Fragment:
+          ProcessFragment(n1, n2, container);
           break;
         default:
           if (shapeFlag & 1 /* ELEMENT */) {

@@ -1,5 +1,5 @@
 import { isNumber, isString } from '@vue/shared'
-import { createVNode, isSameVNode, ShapeFlags, Text } from './createVNode'
+import { createVNode, isSameVNode, ShapeFlags, Text, Fragment } from './createVNode'
 
 function getSequence(arr) {
 	let len = arr.length
@@ -75,7 +75,6 @@ export function createRenderer(options) {
 	}
 
 	function mountChildren(children, container) {
-		// debugger
 		for (let i = 0; i < children.length; i++) {
 			let child = normalizeVNode(children, i)
 			// child 可能是文本内容，我们需要把文本也变成虚拟节点
@@ -126,6 +125,11 @@ export function createRenderer(options) {
 	function ProcessText(n1, n2, container) {
 		if (n1 === null) {
 			hostInsert((n2.el = hostCreateTextNode(n2.children)), container)
+		} else {
+			const el = (n2.el = n1.el) // 复用
+			if (n2.children !== n1.children) {
+				hostSetText(el, n2.children)
+			}
 		}
 	}
 
@@ -335,7 +339,19 @@ export function createRenderer(options) {
 		}
 	}
 
+	function ProcessFragment(n1, n2, container) {
+		if (n1 === null) {
+			mountChildren(n2.children, container)
+		} else {
+			patchChildren(n1, n2, container)
+		}
+	}
+
 	function unmount(vnode) {
+		if (vnode === Fragment) {
+			// Fragment删除所有子节点
+			return unmountChildren(vnode.children)
+		}
 		hostRemove(vnode.el)
 	}
 
@@ -352,6 +368,9 @@ export function createRenderer(options) {
 		switch (type) {
 			case Text:
 				ProcessText(n1, n2, container)
+				break
+			case Fragment:
+				ProcessFragment(n1, n2, container)
 				break
 
 			default:

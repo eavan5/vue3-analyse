@@ -1,4 +1,4 @@
-export { createVNode } from './createVNode'
+export * from './createVNode'
 
 export * from '@vue/reactivity'
 
