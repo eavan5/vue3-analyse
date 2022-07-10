@@ -459,6 +459,13 @@ var VueRuntimeDOM = (() => {
         }
         i++;
       }
+      console.log(i, e1, e2);
+      if (i > e1) {
+        while (i <= e2) {
+          patch(null, c2[i], el);
+          i++;
+        }
+      }
     }
     function patchChildren(n1, n2, el) {
       let c1 = n1.children;

@@ -107,6 +107,15 @@ export function createRenderer(options) {
 			}
 			i++
 		}
+		console.log(i, e1, e2)
+		// 我们可以确定的是 但i的值大于e1 说明 我们已经把老的全部比较完了 但是新的可能还没比较完
+		// i 到 e2 这段是就是新的节点
+		if (i > e1) {
+			while (i <= e2) {
+				patch(null, c2[i], el) // 插入新的节点
+				i++
+			}
+		}
 	}
 
 	function patchChildren(n1, n2, el) {
