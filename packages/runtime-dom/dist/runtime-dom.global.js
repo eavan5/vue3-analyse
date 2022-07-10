@@ -474,12 +474,21 @@ var VueRuntimeDOM = (() => {
       }
       console.log(i, e1, e2);
       if (i > e1) {
-        while (i <= e2) {
-          const nextPos = e2 + 1;
-          console.log(c2, nextPos);
-          let anchor = c2.length <= nextPos ? null : c2[nextPos].el;
-          patch(null, c2[i], el, anchor);
-          i++;
+        if (i <= e2) {
+          while (i <= e2) {
+            const nextPos = e2 + 1;
+            console.log(c2, nextPos);
+            let anchor = c2.length <= nextPos ? null : c2[nextPos].el;
+            patch(null, c2[i], el, anchor);
+            i++;
+          }
+        }
+      } else if (i > e2) {
+        if (i <= e1) {
+          while (i <= e1) {
+            unmount(c1[i]);
+            i++;
+          }
         }
       }
     }

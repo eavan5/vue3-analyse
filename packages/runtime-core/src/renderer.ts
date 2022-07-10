@@ -126,14 +126,28 @@ export function createRenderer(options) {
 
 		// 我们可以确定的是 但i的值大于e1 说明 我们已经把老的全部比较完了 但是新的可能还没比较完
 		// i 到 e2 这段是就是新的节点
+
 		if (i > e1) {
-			while (i <= e2) {
-				const nextPos = e2 + 1
-				// 看一下 下一项是否在数组内 如果在数组内说明有参照物
-				console.log(c2, nextPos)
-				let anchor = c2.length <= nextPos ? null : c2[nextPos].el
-				patch(null, c2[i], el, anchor) // 插入新的节点 找到参照物再插入
-				i++
+			// 新的多了
+			if (i <= e2) {
+				while (i <= e2) {
+					const nextPos = e2 + 1
+					// 看一下 下一项是否在数组内 如果在数组内说明有参照物
+					console.log(c2, nextPos)
+					let anchor = c2.length <= nextPos ? null : c2[nextPos].el
+					patch(null, c2[i], el, anchor) // 插入新的节点 找到参照物再插入
+					i++
+				}
+			}
+		} else if (i > e2) {
+			// 老的多，新的少
+			//  a b c d e f
+			//  a b c d
+			if (i <= e1) {
+				while (i <= e1) {
+					unmount(c1[i])
+					i++
+				}
 			}
 		}
 	}
