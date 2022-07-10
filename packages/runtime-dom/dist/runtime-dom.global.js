@@ -421,7 +421,7 @@ var VueRuntimeDOM = (() => {
         }
       }
     }
-    function mountElement(vnode, container) {
+    function mountElement(vnode, container, anchor) {
       let { type, props, children, shapeFlag } = vnode;
       let el = vnode.el = hostCreateElement(type);
       if (props) {
@@ -433,7 +433,7 @@ var VueRuntimeDOM = (() => {
       if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
         mountChildren(children, el);
       }
-      hostInsert(el, container);
+      hostInsert(el, container, anchor);
     }
     function ProcessText(n1, n2, container) {
       if (n1 === null) {
@@ -460,9 +460,25 @@ var VueRuntimeDOM = (() => {
         i++;
       }
       console.log(i, e1, e2);
+      while (i <= e1 && i <= e2) {
+        const n1 = c1[e1];
+        const n2 = c2[e2];
+        if (isSameVNode(n1, n2)) {
+          console.log(n1, n2);
+          patch(n1, n2, el);
+        } else {
+          break;
+        }
+        e1--;
+        e2--;
+      }
+      console.log(i, e1, e2);
       if (i > e1) {
         while (i <= e2) {
-          patch(null, c2[i], el);
+          const nextPos = e2 + 1;
+          console.log(c2, nextPos);
+          let anchor = c2.length <= nextPos ? null : c2[nextPos].el;
+          patch(null, c2[i], el, anchor);
           i++;
         }
       }
@@ -503,9 +519,9 @@ var VueRuntimeDOM = (() => {
       patchProps(oldProps, newProps, el);
       patchChildren(n1, n2, el);
     }
-    function processElement(n1, n2, container) {
+    function processElement(n1, n2, container, anchor) {
       if (n1 === null) {
-        mountElement(n2, container);
+        mountElement(n2, container, anchor);
       } else {
         patchElement(n1, n2);
       }
@@ -513,7 +529,7 @@ var VueRuntimeDOM = (() => {
     function unmount(vnode) {
       hostRemove(vnode.el);
     }
-    function patch(n1, n2, container) {
+    function patch(n1, n2, container, anchor = null) {
       if (n1 && !isSameVNode(n1, n2)) {
         unmount(n1);
         n1 = null;
@@ -525,7 +541,7 @@ var VueRuntimeDOM = (() => {
           break;
         default:
           if (shapeFlag & 1 /* ELEMENT */) {
-            processElement(n1, n2, container);
+            processElement(n1, n2, container, anchor);
             break;
           }
       }

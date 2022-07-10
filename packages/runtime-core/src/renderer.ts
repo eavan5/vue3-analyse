@@ -53,7 +53,7 @@ export function createRenderer(options) {
 		}
 	}
 
-	function mountElement(vnode, container) {
+	function mountElement(vnode, container, anchor) {
 		// console.log(vnode, container)
 
 		let { type, props, children, shapeFlag } = vnode
@@ -73,7 +73,7 @@ export function createRenderer(options) {
 		if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
 			mountChildren(children, el)
 		}
-		hostInsert(el, container)
+		hostInsert(el, container, anchor)
 	}
 
 	function ProcessText(n1, n2, container) {
@@ -108,11 +108,31 @@ export function createRenderer(options) {
 			i++
 		}
 		console.log(i, e1, e2)
+
+		while (i <= e1 && i <= e2) {
+			const n1 = c1[e1]
+			const n2 = c2[e2]
+			if (isSameVNode(n1, n2)) {
+				console.log(n1, n2)
+				patch(n1, n2, el)
+			} else {
+				break
+			}
+			e1--
+			e2--
+		}
+
+		console.log(i, e1, e2)
+
 		// 我们可以确定的是 但i的值大于e1 说明 我们已经把老的全部比较完了 但是新的可能还没比较完
 		// i 到 e2 这段是就是新的节点
 		if (i > e1) {
 			while (i <= e2) {
-				patch(null, c2[i], el) // 插入新的节点
+				const nextPos = e2 + 1
+				// 看一下 下一项是否在数组内 如果在数组内说明有参照物
+				console.log(c2, nextPos)
+				let anchor = c2.length <= nextPos ? null : c2[nextPos].el
+				patch(null, c2[i], el, anchor) // 插入新的节点 找到参照物再插入
 				i++
 			}
 		}
@@ -183,9 +203,9 @@ export function createRenderer(options) {
 		patchChildren(n1, n2, el)
 	}
 
-	function processElement(n1, n2, container) {
+	function processElement(n1, n2, container, anchor) {
 		if (n1 === null) {
-			mountElement(n2, container)
+			mountElement(n2, container, anchor)
 		} else {
 			// 比较元素
 			patchElement(n1, n2)
@@ -196,7 +216,7 @@ export function createRenderer(options) {
 		hostRemove(vnode.el)
 	}
 
-	function patch(n1, n2, container) {
+	function patch(n1, n2, container, anchor = null) {
 		// 判断标签名和对应的key是否相同，如果一样就说明是同一个节点
 		if (n1 && !isSameVNode(n1, n2)) {
 			unmount(n1)
@@ -213,7 +233,7 @@ export function createRenderer(options) {
 
 			default:
 				if (shapeFlag & ShapeFlags.ELEMENT) {
-					processElement(n1, n2, container)
+					processElement(n1, n2, container, anchor)
 					break
 				}
 		}
