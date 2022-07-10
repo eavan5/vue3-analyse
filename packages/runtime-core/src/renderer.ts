@@ -113,7 +113,6 @@ export function createRenderer(options) {
 			const n1 = c1[e1]
 			const n2 = c2[e2]
 			if (isSameVNode(n1, n2)) {
-				console.log(n1, n2)
 				patch(n1, n2, el)
 			} else {
 				break
@@ -148,6 +147,49 @@ export function createRenderer(options) {
 					unmount(c1[i])
 					i++
 				}
+			}
+		}
+
+		// 乱序比对
+		// a b [c d e ] f g
+		// a b [d e q ] f g  // i= 2 e1 =4 e2 = 4
+		console.log(i, e1, e2)
+
+		let s1 = i // s1=> e1 老的需要比对的节点
+		let s2 = i // s2=> e2 新的需要比对的节点
+
+		// vue2中用的是新的找老的， vue3是用老的找新的
+
+		let toBePatched = e2 - s2 + 1 // 我们需要操作的次数
+		const keyToNewIndexMap = new Map()
+		for (let i = 0; i <= e2; i++) {
+			keyToNewIndexMap.set(c2[i].key, i)
+		}
+
+		for (let i = s1; i <= e1; i++) {
+			const oldVnode = c1[i]
+			const newIndex = keyToNewIndexMap.get(oldVnode.key) // 用老的去找，看看新的里面有没有
+			if (newIndex == null) {
+				unmount(oldVnode)
+			} else {
+				patch(oldVnode, c2[newIndex], el) // 1. 如果新老都有，我们需要比较两个节点的差异，再去比较他们的子节点
+			}
+		}
+
+		//1.然后按照新的位置重新排列，并且将新增的元素插入到新的位置
+		// 我们已知正确的顺序 所以我们可以倒叙插入 appendChild
+		for (let i = toBePatched - 1; i >= 0; i--) {
+			const currentIndex = s2 + i // 找到对应的索引
+			const child = c2[currentIndex] // q
+			const anchor = currentIndex + 1 < c2.length ? c2[currentIndex + 1].el : null
+			// 判断是要移动还是新增
+			if (child.el == null) {
+				//如果vnode有el 说明之前渲染过了，没有就是新增的
+				// 新增
+				patch(null, child, el, anchor)
+			} else {
+				// 这里面应该尽量减少需要移动的节点：最长递增子序列
+				hostInsert(child.el, el, anchor) // 如果有el说明之前新增过
 			}
 		}
 	}

@@ -464,7 +464,6 @@ var VueRuntimeDOM = (() => {
         const n1 = c1[e1];
         const n2 = c2[e2];
         if (isSameVNode(n1, n2)) {
-          console.log(n1, n2);
           patch(n1, n2, el);
         } else {
           break;
@@ -489,6 +488,33 @@ var VueRuntimeDOM = (() => {
             unmount(c1[i]);
             i++;
           }
+        }
+      }
+      console.log(i, e1, e2);
+      let s1 = i;
+      let s2 = i;
+      let toBePatched = e2 - s2 + 1;
+      const keyToNewIndexMap = /* @__PURE__ */ new Map();
+      for (let i2 = 0; i2 <= e2; i2++) {
+        keyToNewIndexMap.set(c2[i2].key, i2);
+      }
+      for (let i2 = s1; i2 <= e1; i2++) {
+        const oldVnode = c1[i2];
+        const newIndex = keyToNewIndexMap.get(oldVnode.key);
+        if (newIndex == null) {
+          unmount(oldVnode);
+        } else {
+          patch(oldVnode, c2[newIndex], el);
+        }
+      }
+      for (let i2 = toBePatched - 1; i2 >= 0; i2--) {
+        const currentIndex = s2 + i2;
+        const child = c2[currentIndex];
+        const anchor = currentIndex + 1 < c2.length ? c2[currentIndex + 1].el : null;
+        if (child.el == null) {
+          patch(null, child, el, anchor);
+        } else {
+          hostInsert(child.el, el, anchor);
         }
       }
     }
@@ -616,6 +642,10 @@ var VueRuntimeDOM = (() => {
 
   // packages/runtime-dom/src/modules/patchStyle.ts
   function patchStyle(el, preValue, nextValue) {
+    if (preValue == null)
+      preValue = {};
+    if (nextValue == null)
+      nextValue = {};
     const style = el.style;
     for (const key in nextValue) {
       style[key] = nextValue[key];

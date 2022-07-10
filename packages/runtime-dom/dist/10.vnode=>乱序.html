@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render } = VueRuntimeDOM
+    render(h('dev', { style: { color: 'red' } }, [
+      h('div', { key: 'a' }, '1'),
+      h('div', { key: 'b' }, '2'),
+      h('div', { key: 'c' }, '3'),
+      h('div', { key: 'd' }, '4'),
+      h('div', { key: 'e' }, '5'),
+      h('div', { key: 'f' }, '6'),
+      h('div', { key: 'g' }, '7'),
+
+    ]), app)
+
+    setTimeout(() => {
+      render(h('dev', { style: { color: 'black' } }, [
+        h('div', { key: 'a' }, '1'),
+        h('div', { key: 'b' }, '2'),
+        h('div', { key: 'd' }, '9'),
+        h('div', { key: 'e', style: { color: 'pink' } }, '8'),
+        h('div', { key: 'q' }, '5'),
+        h('div', { key: 'f' }, '6'),
+        h('div', { key: 'g' }, '7'),
+
+      ]), app)
+    }, 1000);
+
+  </script>
+</body>
+
+</html>
