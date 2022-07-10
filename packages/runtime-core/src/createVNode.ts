@@ -6,6 +6,10 @@ export function isVNode(val) {
 	return !!val.__v_isVNode
 }
 
+  export function isSameVNode(v1,v2) {
+    return v1.type===v2.type && v1.key===v2.key
+  }
+
 export function createVNode(type, props = null, children = null) {
 	// console.log(type, props, children)
 	// 后续判断不同的类型的虚拟节点

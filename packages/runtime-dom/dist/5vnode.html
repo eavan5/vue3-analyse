@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render } = VueRuntimeDOM
+
+
+    // render(h('h1', { style: { color: 'red' } }, "212"), app)
+
+    // setTimeout(() => {
+    //   render(h('h1', { style: { color: 'yellow' } }, '1111'), app)
+    // }, 1000);
+
+
+
+    //情况一
+    // 新儿子	旧儿子	操作方式
+    // 文本	数组	（删除老儿子，设置文本内容）
+    // render(h('h1', { style: { color: 'red' } }, ["1", "2"]), app)
+
+    // setTimeout(() => {
+    //   render(h('h1', { style: { color: 'red' } }, "2222"), app)
+    // }, 1000);
+
+    //情况二
+    // 文本	文本	（更新文本即可）
+    // 文本	空	（更新文本即可) 与上面的类似
+    // render(h('h1', { style: { color: 'red' } }, "1111"), app)
+
+    // setTimeout(() => {
+    //   render(h('h1', { style: { color: 'red' } }, "2222"), app)
+    // }, 1000);
+
+
+    // render(h('h1', { style: { color: 'red' } }, "xxx"), app)
+
+    // setTimeout(() => {
+    //   render(h('h1', { style: { color: 'red' } }, ["2222", '222']), app)
+    // }, 1000);
+
+  </script>
+</body>
+
+</html>

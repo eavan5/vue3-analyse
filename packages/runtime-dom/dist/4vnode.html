@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render } = VueRuntimeDOM
+
+
+    render(h('h1', [123, h('span', 'hello')]), app)
+
+    setTimeout(() => {
+      render(h('h2', [123, h('span', 'hello')]), app)
+    }, 1000);
+    // diff是同级比较，因为用户在炒作dom节点的时候，很少有将儿子变成父亲的请款，如果要做完整的两棵树的比较，性能会很差
+    // 父亲比较完之后会递归子节点 （全量比对）
+
+    setTimeout(() => {
+      render(null, app)
+    }, 2000);
+  </script>
+</body>
+
+</html>
