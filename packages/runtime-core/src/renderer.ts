@@ -1,6 +1,53 @@
 import { isNumber, isString } from '@vue/shared'
 import { createVNode, isSameVNode, ShapeFlags, Text } from './createVNode'
 
+function getSequence(arr) {
+	let len = arr.length
+	let result = [0]
+	const p = Array(len).fill(0) // p中存的什么无所谓
+	let lastIndex
+	let start, end, middle
+	for (let i = 0; i < len; i++) {
+		const arrI = arr[i]
+		if (arrI !== 0) {
+			// 0在vue3中意味着新增的节点，这个不计入最长递增子序列
+			lastIndex = result.at(-1) // 数组中最后一项 就是最大的那个索引
+			if (arr[lastIndex] < arrI) {
+				// 说明当前这一项比结果集中最后一项大 则直接把索引追加到结果集中
+				p[i] = lastIndex // 存的是索引
+				result.push(i)
+				continue
+			}
+			// 否则，找到比当前项大的那个索引 	// 二分查找
+			start = 0
+			end = result.length - 1
+			while (start < end) {
+				middle = Math.floor((start + end) / 2)
+				if (arr[result[middle]] < arrI) {
+					start = middle + 1
+				} else {
+					end = middle
+				}
+			}
+			if (arrI < arr[result[end]]) {
+				p[i] = result[end - 1]
+				result[end] = i
+			}
+		}
+	}
+	console.log(p)
+	// 倒序追溯 先取到结果集的最后一项
+	let i = result.length
+	let last = result[i - 1]
+	while (i--) {
+		//检索后停止
+		result[i] = last // 第一次最后一项肯定是正确的
+		last = p[last] // 根据最后一项向前追溯
+	}
+
+	return result
+}
+
 export function createRenderer(options) {
 	//用户可以调用此方法传入对应的渲染选项
 
@@ -148,48 +195,68 @@ export function createRenderer(options) {
 					i++
 				}
 			}
-		}
+		} else {
+			// 乱序比对
+			// a b [c d e q] f g
+			// a b [e c d h] f g  // i= 2 e1 =4 e2 = 4
+			console.log(i, e1, e2)
 
-		// 乱序比对
-		// a b [c d e ] f g
-		// a b [d e q ] f g  // i= 2 e1 =4 e2 = 4
-		console.log(i, e1, e2)
+			let s1 = i // s1=> e1 老的需要比对的节点
+			let s2 = i // s2=> e2 新的需要比对的节点
 
-		let s1 = i // s1=> e1 老的需要比对的节点
-		let s2 = i // s2=> e2 新的需要比对的节点
+			// vue2中用的是新的找老的， vue3是用老的找新的
 
-		// vue2中用的是新的找老的， vue3是用老的找新的
-
-		let toBePatched = e2 - s2 + 1 // 我们需要操作的次数
-		const keyToNewIndexMap = new Map()
-		for (let i = 0; i <= e2; i++) {
-			keyToNewIndexMap.set(c2[i].key, i)
-		}
-
-		for (let i = s1; i <= e1; i++) {
-			const oldVnode = c1[i]
-			const newIndex = keyToNewIndexMap.get(oldVnode.key) // 用老的去找，看看新的里面有没有
-			if (newIndex == null) {
-				unmount(oldVnode)
-			} else {
-				patch(oldVnode, c2[newIndex], el) // 1. 如果新老都有，我们需要比较两个节点的差异，再去比较他们的子节点
+			let toBePatched = e2 - s2 + 1 // 我们需要操作的次数
+			const keyToNewIndexMap = new Map()
+			for (let i = 0; i <= e2; i++) {
+				keyToNewIndexMap.set(c2[i].key, i)
 			}
-		}
 
-		//1.然后按照新的位置重新排列，并且将新增的元素插入到新的位置
-		// 我们已知正确的顺序 所以我们可以倒叙插入 appendChild
-		for (let i = toBePatched - 1; i >= 0; i--) {
-			const currentIndex = s2 + i // 找到对应的索引
-			const child = c2[currentIndex] // q
-			const anchor = currentIndex + 1 < c2.length ? c2[currentIndex + 1].el : null
-			// 判断是要移动还是新增
-			if (child.el == null) {
-				//如果vnode有el 说明之前渲染过了，没有就是新增的
-				// 新增
-				patch(null, child, el, anchor)
-			} else {
-				// 这里面应该尽量减少需要移动的节点：最长递增子序列
-				hostInsert(child.el, el, anchor) // 如果有el说明之前新增过
+			const seq = new Array(toBePatched).fill(0)
+
+			for (let i = s1; i <= e1; i++) {
+				const oldVnode = c1[i]
+				const newIndex = keyToNewIndexMap.get(oldVnode.key) // 用老的去找，看看新的里面有没有
+				if (newIndex == null) {
+					unmount(oldVnode)
+				} else {
+					// 新的老的都有，我就记录下来当前对应的位置 就可以判断出哪些数据不需要移动
+					// 用新的位置和老的位置做一个关联
+					seq[newIndex - s2] = i + 1 // 拿到新的数组的索引
+					// +1是为了保证之前的初始化的0不被真实位置的0所混淆
+
+					patch(oldVnode, c2[newIndex], el) // 1. 如果新老都有，我们需要比较两个节点的差异，再去比较他们的子节点
+				}
+			}
+			// console.log(seq)
+			let increase = getSequence(seq) // 计算出不用动的索引（也就是最长递增子序列的坐标）
+
+			console.log(increase)
+
+			let j = increase.length - 1
+
+			//1.然后按照新的位置重新排列，并且将新增的元素插入到新的位置
+			// 我们已知正确的顺序 所以我们可以倒叙插入 appendChild
+			for (let i = toBePatched - 1; i >= 0; i--) {
+				const currentIndex = s2 + i // 找到对应的索引
+				const child = c2[currentIndex] // q
+				const anchor = currentIndex + 1 < c2.length ? c2[currentIndex + 1].el : null
+				// 判断是要移动还是新增
+				if (seq[i] === 0) {
+					//如果===0 说明是新增的
+					//如果vnode有el 说明之前渲染过了，没有就是新增的
+					// 新增
+					patch(null, child, el, anchor)
+				} else {
+					// 这里面应该尽量减少需要移动的节点：最长递增子序列
+					if (i !== increase[j]) {
+						// 通过序列来进行比对，找到哪些需要移动，跳过不需要移动的
+						// 如果不是最长递增子序列的第一个元素，那么就需要移动
+						hostInsert(child.el, el, anchor) // 如果有el说明之前新增过
+					} else {
+						j-- // 这里是不做任何操作
+					}
+				}
 			}
 		}
 	}
