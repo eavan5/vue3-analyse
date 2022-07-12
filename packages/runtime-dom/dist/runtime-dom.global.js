@@ -35,6 +35,7 @@ var VueRuntimeDOM = (() => {
   var src_exports = {};
   __export(src_exports, {
     Fragment: () => Fragment,
+    ReactiveEffect: () => ReactiveEffect,
     ShapeFlags: () => ShapeFlags,
     Text: () => Text,
     computed: () => computed,
@@ -73,7 +74,7 @@ var VueRuntimeDOM = (() => {
     return v1.type === v2.type && v1.key === v2.key;
   }
   function createVNode(type, props = null, children = null) {
-    let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
+    let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0;
     const vnode = {
       __v_isVNode: true,
       type,
@@ -388,6 +389,30 @@ var VueRuntimeDOM = (() => {
     }
   }
 
+  // packages/runtime-core/src/components.ts
+  function createComponentInstance(vnode) {
+    let instance = {
+      data: null,
+      vnode,
+      subTree: null,
+      isMounted: false,
+      update: null,
+      render: null
+    };
+    return instance;
+  }
+  function setupComponent(instance) {
+    let { type, props, children } = instance.vnode;
+    let { data, render: render2 } = type;
+    if (data) {
+      if (!isFunction(data)) {
+        return console.warn("this data is not a function");
+      }
+      instance.data = reactive(data.call({}));
+    }
+    instance.render = render2;
+  }
+
   // packages/runtime-core/src/renderer.ts
   function getSequence(arr) {
     let len = arr.length;
@@ -443,7 +468,6 @@ var VueRuntimeDOM = (() => {
       patchProp: hostPatchProp
     } = options;
     function normalizeVNode(children, i) {
-      console.log(children[i]);
       if (isString(children[i]) || isNumber(children[i])) {
         children[i] = createVNode(Text, null, children[i]);
       }
@@ -510,7 +534,6 @@ var VueRuntimeDOM = (() => {
         }
         i++;
       }
-      console.log(i, e1, e2);
       while (i <= e1 && i <= e2) {
         const n1 = c1[e1];
         const n2 = c2[e2];
@@ -522,12 +545,10 @@ var VueRuntimeDOM = (() => {
         e1--;
         e2--;
       }
-      console.log(i, e1, e2);
       if (i > e1) {
         if (i <= e2) {
           while (i <= e2) {
             const nextPos = e2 + 1;
-            console.log(c2, nextPos);
             let anchor = c2.length <= nextPos ? null : c2[nextPos].el;
             patch(null, c2[i], el, anchor);
             i++;
@@ -541,7 +562,6 @@ var VueRuntimeDOM = (() => {
           }
         }
       } else {
-        console.log(i, e1, e2);
         let s1 = i;
         let s2 = i;
         let toBePatched = e2 - s2 + 1;
@@ -629,6 +649,37 @@ var VueRuntimeDOM = (() => {
         patchChildren(n1, n2, container);
       }
     }
+    function setupRenderEffect(instance, container, anchor) {
+      const componentUpdate = () => {
+        if (!instance.isUnmounted) {
+          let { render: render3, data } = instance;
+          if (!instance.isMounted) {
+            const subTree = render3.call(data);
+            patch(null, subTree, container, anchor);
+            instance.subTree = subTree;
+            instance.isMounted = true;
+          } else {
+            const subTree = render3.call(data);
+            patch(instance.subTree, subTree, container, anchor);
+            instance.subTree = subTree;
+          }
+        }
+      };
+      const effect2 = new ReactiveEffect(componentUpdate);
+      let update = instance.update = effect2.run.bind(effect2);
+      effect2.run();
+    }
+    function mountComponent(vnode, container, anchor) {
+      const instance = vnode.component = createComponentInstance(vnode);
+      setupComponent(instance);
+      setupRenderEffect(instance, container, anchor);
+    }
+    function processComponent(n1, n2, container, anchor) {
+      if (n1 === null) {
+        mountComponent(n2, container, anchor);
+      } else {
+      }
+    }
     function unmount(vnode) {
       if (vnode === Fragment) {
         return unmountChildren(vnode.children);
@@ -652,6 +703,8 @@ var VueRuntimeDOM = (() => {
           if (shapeFlag & 1 /* ELEMENT */) {
             processElement(n1, n2, container, anchor);
             break;
+          } else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
+            processComponent(n1, n2, container, anchor);
           }
       }
     }

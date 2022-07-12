@@ -1,4 +1,4 @@
-import { isArray, isString } from '@vue/shared'
+import { isArray, isObject, isString } from '@vue/shared'
 
 export const Text = Symbol('Text')
 
@@ -15,7 +15,11 @@ export function isSameVNode(v1, v2) {
 export function createVNode(type, props = null, children = null) {
 	// console.log(type, props, children)
 	// 后续判断不同的类型的虚拟节点
-	let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0 //标记是元素还是什么节点
+	let shapeFlag = isString(type)
+		? ShapeFlags.ELEMENT
+		: isObject(type)
+		? ShapeFlags.STATEFUL_COMPONENT
+		: 0 //标记是元素还是什么节点
 
 	// 我要将当前的虚拟节点和自己儿子的虚拟节点映射起来 权限组合 位运算
 	const vnode = {

@@ -1,4 +1,6 @@
 import { isNumber, isString } from '@vue/shared'
+import { ReactiveEffect } from '@vue/reactivity'
+import { createComponentInstance, setupComponent } from './components'
 import { createVNode, isSameVNode, ShapeFlags, Text, Fragment } from './createVNode'
 
 function getSequence(arr) {
@@ -65,8 +67,6 @@ export function createRenderer(options) {
 	} = options
 
 	function normalizeVNode(children, i) {
-		console.log(children[i])
-
 		if (isString(children[i]) || isNumber(children[i])) {
 			// 给文本加标识，不能给字符串加，所以只能给对象加
 			children[i] = createVNode(Text, null, children[i]) // 需要换掉以前存的内容
@@ -158,7 +158,7 @@ export function createRenderer(options) {
 			}
 			i++
 		}
-		console.log(i, e1, e2)
+		// console.log(i, e1, e2)
 
 		while (i <= e1 && i <= e2) {
 			const n1 = c1[e1]
@@ -172,7 +172,7 @@ export function createRenderer(options) {
 			e2--
 		}
 
-		console.log(i, e1, e2)
+		// console.log(i, e1, e2)
 
 		// 我们可以确定的是 但i的值大于e1 说明 我们已经把老的全部比较完了 但是新的可能还没比较完
 		// i 到 e2 这段是就是新的节点
@@ -183,7 +183,7 @@ export function createRenderer(options) {
 				while (i <= e2) {
 					const nextPos = e2 + 1
 					// 看一下 下一项是否在数组内 如果在数组内说明有参照物
-					console.log(c2, nextPos)
+					// console.log(c2, nextPos)
 					let anchor = c2.length <= nextPos ? null : c2[nextPos].el
 					patch(null, c2[i], el, anchor) // 插入新的节点 找到参照物再插入
 					i++
@@ -203,7 +203,7 @@ export function createRenderer(options) {
 			// 乱序比对
 			// a b [c d e q] f g
 			// a b [e c d h] f g  // i= 2 e1 =4 e2 = 4
-			console.log(i, e1, e2)
+			// console.log(i, e1, e2)
 
 			let s1 = i // s1=> e1 老的需要比对的节点
 			let s2 = i // s2=> e2 新的需要比对的节点
@@ -216,7 +216,7 @@ export function createRenderer(options) {
 				keyToNewIndexMap.set(c2[i].key, i)
 			}
 
-			const seq = new Array(toBePatched).fill(0)
+			const seq = new Array(toBePatched).fill(0) // 存的是新的数组的索引
 
 			for (let i = s1; i <= e1; i++) {
 				const oldVnode = c1[i]
@@ -299,7 +299,7 @@ export function createRenderer(options) {
 					// diff算法
 					patchKeyedChildren(c1, c2, el)
 				} else {
-					// 现在无了
+					// 又不是数组且不是文本
 					// 空	数组	（删除所有儿子）
 					unmountChildren(c1)
 				}
@@ -347,6 +347,56 @@ export function createRenderer(options) {
 		}
 	}
 
+	function setupRenderEffect(instance, container, anchor) {
+		const componentUpdate = () => {
+			if (!instance.isUnmounted) {
+				let { render, data } = instance
+
+				// 初次渲染
+				if (!instance.isMounted) {
+					// 组件最终需要渲染的节点，就是subTree
+					// 这里面调用render会做依赖收集 稍后数据变化了就会触发update
+					const subTree = render.call(data)
+					patch(null, subTree, container, anchor)
+					instance.subTree = subTree
+					instance.isMounted = true
+				} else {
+					// 更新渲染
+					const subTree = render.call(data)
+					patch(instance.subTree, subTree, container, anchor)
+					instance.subTree = subTree
+				}
+			}
+		}
+		const effect = new ReactiveEffect(componentUpdate)
+		let update = (instance.update = effect.run.bind(effect))
+		effect.run()
+	}
+
+	function mountComponent(vnode, container, anchor) {
+		// 1. 组件挂载前 需要产生一个组件的实例 {} 组件的状态，组件的props，组件的生命周期
+		// 组件的优点： 逻辑复用，拆分方便维护，局部更新
+		const instance = (vnode.component = createComponentInstance(vnode))
+		// 我们需要把创建的实例保存到vnode上，方便复用更新
+
+		// 2，组件的插槽，处理组件的属性 ...  给组件的实例设置属性
+		setupComponent(instance)
+
+		// 3. 给组件产生一个effect， 这样可以组件数据的改变，可以触发更新
+		setupRenderEffect(instance, container, anchor)
+		// instance.mount(container, anchor)
+	}
+
+	function processComponent(n1, n2, container, anchor) {
+		if (n1 === null) {
+			// 初始化组件
+			mountComponent(n2, container, anchor)
+		} else {
+			// 更新组件 比较组件 插槽属性更新等
+			// patchComponent(n1, n2)
+		}
+	}
+
 	function unmount(vnode) {
 		if (vnode === Fragment) {
 			// Fragment删除所有子节点
@@ -356,8 +406,10 @@ export function createRenderer(options) {
 	}
 
 	function patch(n1, n2, container, anchor = null) {
+		// n1 老虚拟dom n2 新虚拟dom
 		// 判断标签名和对应的key是否相同，如果一样就说明是同一个节点
 		if (n1 && !isSameVNode(n1, n2)) {
+			// 说明不是同一个节点就不能复用，直接去走n2的挂载流程
 			unmount(n1)
 			n1 = null //将n1 重置为null 此时会走n2的初始化
 		}
@@ -377,6 +429,9 @@ export function createRenderer(options) {
 				if (shapeFlag & ShapeFlags.ELEMENT) {
 					processElement(n1, n2, container, anchor)
 					break
+				} else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+					// 如果是状态组件
+					processComponent(n1, n2, container, anchor)
 				}
 		}
 	}

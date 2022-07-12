@@ -1,4 +1,4 @@
-export { effect } from './effect.js'
+export { effect, ReactiveEffect } from './effect.js'
 export { reactive } from './reactive.js'
 export { computed } from './computed.js'
 export { watch } from './watch'
