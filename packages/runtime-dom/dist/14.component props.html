@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render } = VueRuntimeDOM
+
+    const VueComponent = {
+      props: { // propsOptions 用户提供的，告诉vue哪些是属性，其他不是的会放到attrs中
+        a: Number,
+        b: {}
+      },
+      data () {
+        return {
+          age: "18"
+        }
+      },
+      render () { // render 函数返回虚拟节点，决定最终渲染结果
+        console.log(this);
+        return h('button', {
+          onClick: () => {
+            this.b.a++ // 这样没有渲染，所以这个是一层的，没有多层
+            console.log(this); // 开发环境是proxy（为了调试方便)，生产是普通的对象
+          }
+        }, h('span', {
+          style: {
+            color: 'red'
+          }
+        }, this.a + this.age))
+      }
+    }
+    //  处理h 函数 ，让h函数可以接受一个组件作为参数，渲染的时候 判断是否是组件对象，如果是组件对象，则使用组件对象的render方法
+
+    // console.log(h(VueComponent, { color: 'red' }, { default: h('div') }));
+    render(h(VueComponent, { a: 1, b: { a: 99 }, c: 3 }), app)
+  </script>
+</body>
+
+</html>

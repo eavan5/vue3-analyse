@@ -352,17 +352,18 @@ export function createRenderer(options) {
 			if (!instance.isUnmounted) {
 				let { render, data } = instance
 
+				// render函数的this即可以取到data 也可以取到props 还可以取到attr
 				// 初次渲染
 				if (!instance.isMounted) {
 					// 组件最终需要渲染的节点，就是subTree
 					// 这里面调用render会做依赖收集 稍后数据变化了就会触发update
-					const subTree = render.call(data)
+					const subTree = render.call(instance.proxy)
 					patch(null, subTree, container, anchor)
 					instance.subTree = subTree
 					instance.isMounted = true
 				} else {
 					// 更新渲染
-					const subTree = render.call(data)
+					const subTree = render.call(instance.proxy)
 					patch(instance.subTree, subTree, container, anchor)
 					instance.subTree = subTree
 				}

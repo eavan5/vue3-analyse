@@ -63,6 +63,8 @@ var VueRuntimeDOM = (() => {
   var isString = (value) => typeof value === "string";
   var isArray = Array.isArray;
   var isNumber = (value) => typeof value === "number";
+  var hasOwnProperty = Object.prototype.hasOwnProperty;
+  var hasOwn = (obj, key) => hasOwnProperty.call(obj, key);
 
   // packages/runtime-core/src/createVNode.ts
   var Text = Symbol("Text");
@@ -397,13 +399,63 @@ var VueRuntimeDOM = (() => {
       subTree: null,
       isMounted: false,
       update: null,
-      render: null
+      render: null,
+      propsOptions: vnode.type.props || {},
+      props: {},
+      attrs: {},
+      proxy: null
     };
     return instance;
   }
+  function initProps(instance, rawProps) {
+    const props = {};
+    const attrs = {};
+    const options = instance.propsOptions;
+    if (rawProps) {
+      for (const key in rawProps) {
+        const value = rawProps[key];
+        if (key in options) {
+          props[key] = value;
+        } else {
+          attrs[key] = value;
+        }
+      }
+    }
+    instance.props = reactive(props);
+    instance.attrs = attrs;
+  }
+  var publicProperties = {
+    $attrs: (instance) => instance.attrs
+  };
+  var instanceProxy = {
+    get(target, key, receiver) {
+      const { data, props } = target;
+      if (data && hasOwn(data, key)) {
+        return data[key];
+      } else if (props && hasOwn(props, key)) {
+        return props[key];
+      }
+      let getter = publicProperties[key];
+      if (getter) {
+        return getter(target);
+      }
+    },
+    set(target, key, value, receiver) {
+      const { data, props } = target;
+      if (data && hasOwn(data, key)) {
+        data[key] = value;
+      } else if (props && hasOwn(props, key)) {
+        console.warn(`Attempting to set prop '${key}' to '${value}' on a Vue instance that is not a Vue component.`);
+        return false;
+      }
+      return true;
+    }
+  };
   function setupComponent(instance) {
     let { type, props, children } = instance.vnode;
     let { data, render: render2 } = type;
+    initProps(instance, props);
+    instance.proxy = new Proxy(instance, instanceProxy);
     if (data) {
       if (!isFunction(data)) {
         return console.warn("this data is not a function");
@@ -654,12 +706,12 @@ var VueRuntimeDOM = (() => {
         if (!instance.isUnmounted) {
           let { render: render3, data } = instance;
           if (!instance.isMounted) {
-            const subTree = render3.call(data);
+            const subTree = render3.call(instance.proxy);
             patch(null, subTree, container, anchor);
             instance.subTree = subTree;
             instance.isMounted = true;
           } else {
-            const subTree = render3.call(data);
+            const subTree = render3.call(instance.proxy);
             patch(instance.subTree, subTree, container, anchor);
             instance.subTree = subTree;
           }
@@ -709,7 +761,6 @@ var VueRuntimeDOM = (() => {
       }
     }
     function render2(vnode, container) {
-      debugger;
       if (vnode == null) {
         if (container._vnode) {
           unmount(container._vnode);
