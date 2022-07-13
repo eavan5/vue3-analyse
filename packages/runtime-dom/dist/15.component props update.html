@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render, Fragment } = VueRuntimeDOM
+
+
+    // 组件更新有两种方式 1. 自己的状态更新 2. 父组件的状态更新
+    const ChildComponent = {
+      props: {
+        a: {}
+      },
+      render () {
+        return h('a', this.a)
+      }
+    }
+
+    const VueComponent = {
+      props: { // propsOptions 用户提供的，告诉vue哪些是属性，其他不是的会放到attrs中
+        a: Number,
+        b: {}
+      },
+      data () {
+        return {
+          flag: true,
+        }
+      },
+      render () { // render 函数返回虚拟节点，决定最终渲染结果
+        return h(Fragment, [
+          h(ChildComponent, { a: this.flag ? 1 : 2 }, this.a),
+          h('button', { onClick: () => this.flag = false }, '重新渲染组件')
+        ])
+      }
+    }
+    //  处理h 函数 ，让h函数可以接受一个组件作为参数，渲染的时候 判断是否是组件对象，如果是组件对象，则使用组件对象的render方法
+
+    // console.log(h(VueComponent, { color: 'red' }, { default: h('div') }));
+    render(h(VueComponent, { a: 1, }), app)
+  </script>
+</body>
+
+</html>

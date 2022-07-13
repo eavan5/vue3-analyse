@@ -339,6 +339,12 @@ export function createRenderer(options) {
 		}
 	}
 
+	function updateComponentPreRender(instance, next) {
+		instance.next = null
+		instance.vnode = next // 更新虚拟节点和next属性
+		updateProps(instance, next, next.props)
+	}
+
 	function ProcessFragment(n1, n2, container) {
 		if (n1 === null) {
 			mountChildren(n2.children, container)
@@ -363,6 +369,13 @@ export function createRenderer(options) {
 					instance.isMounted = true
 				} else {
 					// 更新渲染
+					// 统一处理
+					let next = instance.next // next表示新的虚拟节点
+					if (next) {
+						// 需要更新属性 在更新组件之前更新
+						updateComponentPreRender(instance, next)
+					}
+
 					const subTree = render.call(instance.proxy)
 					patch(instance.subTree, subTree, container, anchor)
 					instance.subTree = subTree
@@ -388,15 +401,66 @@ export function createRenderer(options) {
 		// instance.mount(container, anchor)
 	}
 
+	function hasChange(prevProps, nextProps) {
+		for (let key in prevProps) {
+			if (nextProps[key] !== prevProps[key]) {
+				return true
+			}
+		}
+		return false
+	}
+
+	function updateProps(instance, prevProps, nextProps) {
+		// 只需要比较一层即可，因为属性中的属性是非响应式的
+		// 如果属性个数不一致，直接要更新
+		for (let key in nextProps) {
+			// 这里改的属性 不是通过代理对象修改的 instance.proxy传递出去了 导致用户不能修改props，但是我们可以通过instance.props修改
+			instance.props[key] = nextProps[key] // 赋值的时候会重新调用update
+		}
+		for (let key in instance.props) {
+			if (!(key in nextProps)) {
+				delete instance.props[key]
+			}
+		}
+	}
+
+	function shouldComponentUpdate(n1, n2) {
+		const prevProps = n1.props
+		const nextProps = n2.props
+		// 插槽更新，就返回true调用update
+		return hasChange(prevProps, nextProps) // 如果属性有变化说明需要更新
+	}
+
+	function updateComponent(n1, n2) {
+		// 拿到之前的属性和之后的属性，比较是否相同
+		const instance = (n2.component = n1.component)
+		// 这个props是包含attrs的,是不需要的 源码中是resolvePropsValue 只处理props的属性
+		if (shouldComponentUpdate(n1, n2)) {
+			instance.next = n2
+			instance.update() // 让effect重新执行
+		}
+
+		// console.log(n1.props, n2.props)
+		// const prevProps = n1.props
+		// const nextProps = n2.props
+
+		// 1.updateProps(instance, prevProps, nextProps)
+		// 2.这里面还要去看一下 插槽需不需要更新
+		// 3.应该放到组件更新的逻辑中，不应该再写一次
+	}
+
 	function processComponent(n1, n2, container, anchor) {
 		if (n1 === null) {
 			// 初始化组件
 			mountComponent(n2, container, anchor)
 		} else {
 			// 更新组件 比较组件 插槽属性更新等
-			// patchComponent(n1, n2)
+			updateComponent(n1, n2)
 		}
 	}
+
+	//  组件初渲染的过程 1. 创建实例 这里面有一个代理对象会代理data，props，attrs 2. 给组件实例赋值，给instance赋值 3.创建一个组件的effect运行
+	// 组件更新过程： 1.组件的状态发生变化会触发自己的effect重新执行 2.属性更新了，会执行updateComponent,内部去比较要不要更新，如果需要更新会调用组件的update方法，在调用render之前，更新属性
 
 	function unmount(vnode) {
 		if (vnode === Fragment) {

@@ -694,6 +694,11 @@ var VueRuntimeDOM = (() => {
         patchElement(n1, n2);
       }
     }
+    function updateComponentPreRender(instance, next) {
+      instance.next = null;
+      instance.vnode = next;
+      updateProps(instance, next, next.props);
+    }
     function ProcessFragment(n1, n2, container) {
       if (n1 === null) {
         mountChildren(n2.children, container);
@@ -711,6 +716,10 @@ var VueRuntimeDOM = (() => {
             instance.subTree = subTree;
             instance.isMounted = true;
           } else {
+            let next = instance.next;
+            if (next) {
+              updateComponentPreRender(instance, next);
+            }
             const subTree = render3.call(instance.proxy);
             patch(instance.subTree, subTree, container, anchor);
             instance.subTree = subTree;
@@ -726,10 +735,41 @@ var VueRuntimeDOM = (() => {
       setupComponent(instance);
       setupRenderEffect(instance, container, anchor);
     }
+    function hasChange(prevProps, nextProps) {
+      for (let key in prevProps) {
+        if (nextProps[key] !== prevProps[key]) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function updateProps(instance, prevProps, nextProps) {
+      for (let key in nextProps) {
+        instance.props[key] = nextProps[key];
+      }
+      for (let key in instance.props) {
+        if (!(key in nextProps)) {
+          delete instance.props[key];
+        }
+      }
+    }
+    function shouldComponentUpdate(n1, n2) {
+      const prevProps = n1.props;
+      const nextProps = n2.props;
+      return hasChange(prevProps, nextProps);
+    }
+    function updateComponent(n1, n2) {
+      const instance = n2.component = n1.component;
+      if (shouldComponentUpdate(n1, n2)) {
+        instance.next = n2;
+        instance.update();
+      }
+    }
     function processComponent(n1, n2, container, anchor) {
       if (n1 === null) {
         mountComponent(n2, container, anchor);
       } else {
+        updateComponent(n1, n2);
       }
     }
     function unmount(vnode) {
