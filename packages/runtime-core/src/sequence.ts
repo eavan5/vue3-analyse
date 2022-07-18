@@ -32,7 +32,7 @@ function getSequence(arr) {
 	const p = Array(len).fill(0) // p中存的什么无所谓
 	let lastIndex
 	let start, end, middle
-	for (let i = 0; i < len; i++) {
+	for (let i = 1; i < len; i++) {
 		const arrI = arr[i]
 		if (arrI !== 0) {
 			// 0在vue3中意味着新增的节点，这个不计入最长递增子序列
@@ -55,12 +55,15 @@ function getSequence(arr) {
 				}
 			}
 			if (arrI < arr[result[end]]) {
-				p[i] = result[end - 1]
+				p[i] = result[end - 1] // 记录之前那一项的坐标
 				result[end] = i
 			}
 		}
+		// console.log(p)
 	}
 	console.log(p)
+	console.log(result)
+
 	// 倒序追溯 先取到结果集的最后一项
 	let i = result.length
 	let last = result[i - 1]
@@ -73,6 +76,16 @@ function getSequence(arr) {
 	return result
 }
 
-let arrIndex = getSequence([2, 3, 7, 6, 8, 4, 9, 5]) // [0,1,5,7,6] => [0,1,3,4,6]
+let arrIndex = getSequence([10, 9, 2, 5, 3, 7, 101, 4, 1])
+
+// [2, 3, 7, 6, 8, 4, 9]
+//  0  0  1  1  3  1  6  p的值
+// 2
+// 2 3
+// 2 3 7
+// 2 3 6
+// 2 3 6 8
+// 2 3 4 8
+// 2 3 4 8 9
 
 console.log(arrIndex)

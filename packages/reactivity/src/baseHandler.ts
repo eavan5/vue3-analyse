@@ -38,6 +38,6 @@ export const baseHandler = {
 			trigger(target, key)
 			return result
 		}
-		return
+		return value
 	},
 }

@@ -226,7 +226,7 @@ var VueRuntimeDOM = (() => {
         trigger(target, key);
         return result;
       }
-      return;
+      return value;
     }
   };
 
@@ -463,6 +463,29 @@ var VueRuntimeDOM = (() => {
       instance.data = reactive(data.call({}));
     }
     instance.render = render2;
+  }
+
+  // packages/runtime-core/src/scheduler.ts
+  var queue = [];
+  var isFlushing = false;
+  var resolvePromise = Promise.resolve();
+  function queueJob(job) {
+    if (!queue.includes(job)) {
+      queue.push(job);
+    }
+    if (!isFlushing) {
+      isFlushing = true;
+      resolvePromise.then(() => {
+        isFlushing = false;
+        const copyQueue = queue.slice();
+        queue.length = 0;
+        for (let i = 0; i < copyQueue.length; i++) {
+          let job2 = copyQueue[i];
+          job2();
+        }
+        copyQueue.length = 0;
+      });
+    }
   }
 
   // packages/runtime-core/src/renderer.ts
@@ -726,9 +749,9 @@ var VueRuntimeDOM = (() => {
           }
         }
       };
-      const effect2 = new ReactiveEffect(componentUpdate);
+      const effect2 = new ReactiveEffect(componentUpdate, () => queueJob(instance.update));
       let update = instance.update = effect2.run.bind(effect2);
-      effect2.run();
+      update();
     }
     function mountComponent(vnode, container, anchor) {
       const instance = vnode.component = createComponentInstance(vnode);

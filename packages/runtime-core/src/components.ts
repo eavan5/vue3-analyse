@@ -26,7 +26,7 @@ function initProps(instance, rawProps) {
 		for (const key in rawProps) {
 			const value = rawProps[key] // 拿到对应的值
 
-			// 这里应该校验值的内心 是否符合 props的类型
+			// 这里应该校验值的类型 是否符合 props的类型
 			if (key in options) {
 				props[key] = value
 			} else {

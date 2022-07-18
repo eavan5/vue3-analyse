@@ -152,7 +152,7 @@ var VueReactivity = (() => {
         trigger(target, key);
         return result;
       }
-      return;
+      return value;
     }
   };
 

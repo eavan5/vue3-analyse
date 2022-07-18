@@ -2,6 +2,7 @@ import { isNumber, isString } from '@vue/shared'
 import { ReactiveEffect } from '@vue/reactivity'
 import { createComponentInstance, setupComponent } from './components'
 import { createVNode, isSameVNode, ShapeFlags, Text, Fragment } from './createVNode'
+import { queueJob } from './scheduler'
 
 function getSequence(arr) {
 	let len = arr.length
@@ -382,9 +383,11 @@ export function createRenderer(options) {
 				}
 			}
 		}
-		const effect = new ReactiveEffect(componentUpdate)
+    const effect = new ReactiveEffect(componentUpdate, () => queueJob(instance.update))
+    
+
 		let update = (instance.update = effect.run.bind(effect))
-		effect.run()
+		update()
 	}
 
 	function mountComponent(vnode, container, anchor) {

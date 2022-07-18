@@ -103,7 +103,7 @@ export function track(target, key) {
 export function trackEffects(deps) {
 	let shouldTrack = !deps.has(activeEffect)
 	if (shouldTrack) {
-		deps.add(activeEffect)
+		deps.add(activeEffect) // 进行依赖收集
 		activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
 	}
 	// 3.让属性去记住所用到的effect是谁，但是哪个effect对应哪个属性应该也要知道（后期需要一些清理工作）
