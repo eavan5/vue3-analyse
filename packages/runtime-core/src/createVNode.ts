@@ -39,7 +39,9 @@ export function createVNode(type, props = null, children = null) {
 		if (isArray(children)) {
 			// 走到createVNode 要么是数组 要么是字符串 h()中会对children进行处理
 			temp = ShapeFlags.ARRAY_CHILDREN
-		} else {
+    } else if (isObject(children)) { 
+      temp = ShapeFlags.SLOTS_CHILDREN
+    }else {
 			children = String(children)
 			temp = ShapeFlags.TEXT_CHILDREN
 		}

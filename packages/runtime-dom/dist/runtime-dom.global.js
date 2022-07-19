@@ -90,6 +90,8 @@ var VueRuntimeDOM = (() => {
       let temp = 0;
       if (isArray(children)) {
         temp = ShapeFlags.ARRAY_CHILDREN;
+      } else if (isObject(children)) {
+        temp = ShapeFlags.SLOTS_CHILDREN;
       } else {
         children = String(children);
         temp = ShapeFlags.TEXT_CHILDREN;
@@ -404,7 +406,9 @@ var VueRuntimeDOM = (() => {
       props: {},
       attrs: {},
       proxy: null,
-      setupState: {}
+      setupState: {},
+      slots: {},
+      exposed: {}
     };
     return instance;
   }
@@ -426,7 +430,8 @@ var VueRuntimeDOM = (() => {
     instance.attrs = attrs;
   }
   var publicProperties = {
-    $attrs: (instance) => instance.attrs
+    $attrs: (instance) => instance.attrs,
+    $slots: (instance) => instance.slots
   };
   var instanceProxy = {
     get(target, key, receiver) {
@@ -456,10 +461,16 @@ var VueRuntimeDOM = (() => {
       return true;
     }
   };
+  function initSlots(instance, children) {
+    if (instance.vnode.shapeFlag & 32 /* SLOTS_CHILDREN */) {
+      instance.slots = children;
+    }
+  }
   function setupComponent(instance) {
     let { type, props, children } = instance.vnode;
     let { data, render: render2, setup } = type;
     initProps(instance, props);
+    initSlots(instance, children);
     instance.proxy = new Proxy(instance, instanceProxy);
     if (data) {
       if (!isFunction(data)) {
@@ -474,7 +485,11 @@ var VueRuntimeDOM = (() => {
           let invoker = instance.vnode.props[name];
           invoker && invoker(...args);
         },
-        attrs: instance.attrs
+        attrs: instance.attrs,
+        slots: instance.slots,
+        expose: (exposed) => {
+          instance.exposed = exposed;
+        }
       };
       const setupResult = setup(instance.props, context);
       if (isFunction(setupResult)) {
