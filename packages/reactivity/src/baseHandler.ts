@@ -16,7 +16,6 @@ export const baseHandler = {
 			// 1.这边是为了防止一个代理属性被多次代理
 			return true
 		}
-		// debugger
 		// 让当前的key和effect去进行关联
 		track(target, key)
 

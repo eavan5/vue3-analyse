@@ -70,7 +70,7 @@ var VueRuntimeDOM = (() => {
   var Text = Symbol("Text");
   var Fragment = Symbol("Fragment");
   function isVNode(val) {
-    return !!val.__v_isVNode;
+    return !!(val == null ? void 0 : val.__v_isVNode);
   }
   function isSameVNode(v1, v2) {
     return v1.type === v2.type && v1.key === v2.key;
@@ -86,7 +86,7 @@ var VueRuntimeDOM = (() => {
       el: null,
       shapeFlag
     };
-    if (children) {
+    if (children !== void 0) {
       let temp = 0;
       if (isArray(children)) {
         temp = ShapeFlags.ARRAY_CHILDREN;
@@ -190,7 +190,7 @@ var VueRuntimeDOM = (() => {
   }
   function trackEffects(deps) {
     let shouldTrack = !deps.has(activeEffect);
-    if (shouldTrack) {
+    if (shouldTrack && activeEffect) {
       deps.add(activeEffect);
       activeEffect.deps.push(deps);
     }
@@ -326,7 +326,7 @@ var VueRuntimeDOM = (() => {
         return r.__v_isRef ? r.value : r;
       },
       set(target, key, value, receiver) {
-        if (target[key].__v_isReactive) {
+        if (target[key].__v_isRef) {
           target[key].value = value;
           return true;
         }
@@ -403,7 +403,8 @@ var VueRuntimeDOM = (() => {
       propsOptions: vnode.type.props || {},
       props: {},
       attrs: {},
-      proxy: null
+      proxy: null,
+      setupState: {}
     };
     return instance;
   }
@@ -429,9 +430,11 @@ var VueRuntimeDOM = (() => {
   };
   var instanceProxy = {
     get(target, key, receiver) {
-      const { data, props } = target;
+      const { data, props, setupState } = target;
       if (data && hasOwn(data, key)) {
         return data[key];
+      } else if (setupState && hasOwn(setupState, key)) {
+        return setupState[key];
       } else if (props && hasOwn(props, key)) {
         return props[key];
       }
@@ -441,9 +444,11 @@ var VueRuntimeDOM = (() => {
       }
     },
     set(target, key, value, receiver) {
-      const { data, props } = target;
+      const { data, props, setupState } = target;
       if (data && hasOwn(data, key)) {
         data[key] = value;
+      } else if (setupState && hasOwn(setupState, key)) {
+        setupState[key] = value;
       } else if (props && hasOwn(props, key)) {
         console.warn(`Attempting to set prop '${key}' to '${value}' on a Vue instance that is not a Vue component.`);
         return false;
@@ -453,7 +458,7 @@ var VueRuntimeDOM = (() => {
   };
   function setupComponent(instance) {
     let { type, props, children } = instance.vnode;
-    let { data, render: render2 } = type;
+    let { data, render: render2, setup } = type;
     initProps(instance, props);
     instance.proxy = new Proxy(instance, instanceProxy);
     if (data) {
@@ -462,7 +467,28 @@ var VueRuntimeDOM = (() => {
       }
       instance.data = reactive(data.call({}));
     }
-    instance.render = render2;
+    if (setup) {
+      const context = {
+        emit(eventName, ...args) {
+          const name = `on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`;
+          let invoker = instance.vnode.props[name];
+          invoker && invoker(...args);
+        },
+        attrs: instance.attrs
+      };
+      const setupResult = setup(instance.props, context);
+      if (isFunction(setupResult)) {
+        instance.render = setupResult;
+      } else if (isObject(setupResult)) {
+        instance.setupState = proxyRefs(setupResult);
+      }
+    }
+    if (!instance.render) {
+      if (render2) {
+        instance.render = render2;
+      } else {
+      }
+    }
   }
 
   // packages/runtime-core/src/scheduler.ts

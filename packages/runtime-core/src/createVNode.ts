@@ -5,7 +5,7 @@ export const Text = Symbol('Text')
 export const Fragment = Symbol('Fragment')
 
 export function isVNode(val) {
-	return !!val.__v_isVNode
+	return !!val?.__v_isVNode
 }
 
 export function isSameVNode(v1, v2) {
@@ -34,7 +34,7 @@ export function createVNode(type, props = null, children = null) {
 		// 打个标记
 	}
 
-	if (children) {
+	if (children !== undefined) {
 		let temp = 0
 		if (isArray(children)) {
 			// 走到createVNode 要么是数组 要么是字符串 h()中会对children进行处理

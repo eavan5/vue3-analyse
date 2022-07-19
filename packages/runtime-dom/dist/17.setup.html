@@ -13,20 +13,29 @@
   <script src="./runtime-dom.global.js"></script>
   <div id="app"></div>
   <script>
-    const { h, createVNode, createRender, render, Fragment, Text } = VueRuntimeDOM
+    const { h, createVNode, createRender, render, Fragment, Text, reactive, ref } = VueRuntimeDOM
 
 
     // 选项式api缺点：1.不能tree-shaking,2.this指向问题，3.代码内聚性差
+    // compositionAPI只能在setup中使用
+
     const VueComponent = {
-      data () {
+      setup () {
+        // 1.setup可以返回一个render函数
+        // return function () {
+        //   return h('div', 'hello')
+        // }
+        // 2. setup也可以返回一个对象，决定最终的渲染结果
+        let count = ref(0)
         return {
-          count: 0
+          count
         }
       },
-      render () { // render 函数返回虚拟节点，决定最终渲染结果
-        console.log('render');
-        return h('div', [h('button', {
+      render (props) { // render 函数返回虚拟节点，决定最终渲染结果
+        return h('span', [h('button', {
           onClick: () => {
+            this.count++
+            this.count++
             this.count++
           }
         }, '增加'), h(Text, null, this.count)])
@@ -34,7 +43,6 @@
     }
     //  处理h 函数 ，让h函数可以接受一个组件作为参数，渲染的时候 判断是否是组件对象，如果是组件对象，则使用组件对象的render方法
 
-    // console.log(h(VueComponent, { color: 'red' }, { default: h('div') }));
     render(h(VueComponent, { a: 1, }), app)
   </script>
 </body>

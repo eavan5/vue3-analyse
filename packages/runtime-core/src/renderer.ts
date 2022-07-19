@@ -102,7 +102,6 @@ export function createRenderer(options) {
 
 	function mountElement(vnode, container, anchor) {
 		// console.log(vnode, container)
-
 		let { type, props, children, shapeFlag } = vnode
 		// console.log(type, props, children, shapeFlag)
 		// 因为我们后续需要比对虚拟节点的差异更新页面，所以需要保留对应的真实节点
@@ -494,7 +493,7 @@ export function createRenderer(options) {
 				break
 
 			default:
-				if (shapeFlag & ShapeFlags.ELEMENT) {
+        if (shapeFlag & ShapeFlags.ELEMENT) {
 					processElement(n1, n2, container, anchor)
 					break
 				} else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {

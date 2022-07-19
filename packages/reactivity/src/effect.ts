@@ -6,7 +6,6 @@
 export let activeEffect = undefined
 
 function clearEffect(effect) {
-	// debugger
 	// 当执行effect的时候，我们需要重新建立起新的依赖收集，否则会导致重复渲染发生
 	// 所以需要清理effect中存入属性中set中的effect
 
@@ -85,7 +84,7 @@ export function triggerEffects(effects) {
 	}
 }
 
-export function track(target, key) {
+export function track (target, key) {
 	if (activeEffect) {
 		let depsMap = targetMap.get(target)
 		if (!depsMap) {
@@ -97,12 +96,12 @@ export function track(target, key) {
 		}
 		trackEffects(deps)
 	}
-	// console.log(activeEffect, targetMap);
 }
 
-export function trackEffects(deps) {
-	let shouldTrack = !deps.has(activeEffect)
-	if (shouldTrack) {
+export function trackEffects (deps) {
+  let shouldTrack = !deps.has(activeEffect)
+  
+  if (shouldTrack&& activeEffect) {
 		deps.add(activeEffect) // 进行依赖收集
 		activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
 	}
