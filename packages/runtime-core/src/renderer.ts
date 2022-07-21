@@ -75,12 +75,12 @@ export function createRenderer(options) {
 		return children[i]
 	}
 
-	function mountChildren(children, container) {
+	function mountChildren(children, container, parent) {
 		for (let i = 0; i < children.length; i++) {
 			let child = normalizeVNode(children, i)
 			// child 可能是文本内容，我们需要把文本也变成虚拟节点
 
-			patch(null, child, container) // 递归渲染子节点
+			patch(null, child, container, parent) // 递归渲染子节点
 		}
 	}
 
@@ -100,7 +100,7 @@ export function createRenderer(options) {
 		}
 	}
 
-	function mountElement(vnode, container, anchor) {
+	function mountElement(vnode, container, anchor, parent) {
 		// console.log(vnode, container)
 		let { type, props, children, shapeFlag } = vnode
 		// console.log(type, props, children, shapeFlag)
@@ -117,7 +117,7 @@ export function createRenderer(options) {
 			hostSetElementText(el, children)
 		}
 		if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-			mountChildren(children, el)
+			mountChildren(children, el, parent)
 		}
 		hostInsert(el, container, anchor)
 	}
@@ -265,7 +265,7 @@ export function createRenderer(options) {
 		}
 	}
 
-	function patchChildren(n1, n2, el) {
+	function patchChildren(n1, n2, el, parent) {
 		let c1 = n1.children
 		let c2 = n2.children
 		const prevShapeFlag = n1.shapeFlag
@@ -313,13 +313,13 @@ export function createRenderer(options) {
 				}
 				if (nextShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
 					//前后都是数组
-					mountChildren(c2, el)
+					mountChildren(c2, el, null)
 				}
 			}
 		}
 	}
 
-	function patchElement(n1, n2) {
+	function patchElement(n1, n2, parent) {
 		//n1和n2能复用用 说明dom就不用删除了
 		let el = (n2.el = n1.el) // 1.节点复用
 		let oldProps = n1.props
@@ -327,15 +327,15 @@ export function createRenderer(options) {
 		patchProps(oldProps, newProps, el) // 2.更新属性
 
 		//3. 更新子节点
-		patchChildren(n1, n2, el)
+		patchChildren(n1, n2, el, parent)
 	}
 
-	function processElement(n1, n2, container, anchor) {
+	function processElement(n1, n2, container, anchor, parent) {
 		if (n1 === null) {
-			mountElement(n2, container, anchor)
+			mountElement(n2, container, anchor, parent)
 		} else {
 			// 比较元素
-			patchElement(n1, n2)
+			patchElement(n1, n2, parent)
 		}
 	}
 
@@ -345,11 +345,11 @@ export function createRenderer(options) {
 		updateProps(instance, next, next.props)
 	}
 
-	function ProcessFragment(n1, n2, container) {
+	function ProcessFragment(n1, n2, container, parent) {
 		if (n1 === null) {
-			mountChildren(n2.children, container)
+			mountChildren(n2.children, container, parent)
 		} else {
-			patchChildren(n1, n2, container)
+			patchChildren(n1, n2, container, parent)
 		}
 	}
 
@@ -363,23 +363,22 @@ export function createRenderer(options) {
 				if (!instance.isMounted) {
 					// 组件最终需要渲染的节点，就是subTree
 
-          const { bm, m } = instance
-          if (bm) {
-            invokerFns(bm)
-          }
+					const { bm, m } = instance
+					if (bm) {
+						invokerFns(bm)
+					}
 
 					// 这里面调用render会做依赖收集 稍后数据变化了就会触发update
 					const subTree = render.call(instance.proxy)
-					patch(null, subTree, container, anchor)
+					patch(null, subTree, container, anchor, instance) // 子组件的父亲就是当前的实例 这样就构建好父子关系
 					instance.subTree = subTree
-          instance.isMounted = true
-          
-          if (m) {
-            invokerFns(m)
-          }
-        } else {
-          const { u } = instance
-          
+					if (m) {
+						invokerFns(m)
+					}
+					instance.isMounted = true
+				} else {
+					const { u } = instance
+
 					// 更新渲染
 					// 统一处理
 					let next = instance.next // next表示新的虚拟节点
@@ -389,25 +388,24 @@ export function createRenderer(options) {
 					}
 
 					const subTree = render.call(instance.proxy)
-          patch(instance.subTree, subTree, container, anchor)
-          if (u) {
-            invokerFns(u)
-          }
+					patch(instance.subTree, subTree, container, anchor, instance)
+					if (u) {
+						invokerFns(u)
+					}
 					instance.subTree = subTree
 				}
 			}
 		}
-    const effect = new ReactiveEffect(componentUpdate, () => queueJob(instance.update))
-    
+		const effect = new ReactiveEffect(componentUpdate, () => queueJob(instance.update))
 
 		let update = (instance.update = effect.run.bind(effect))
 		update()
 	}
 
-  function mountComponent (vnode, container, anchor) {
+	function mountComponent(vnode, container, anchor, parent) {
 		// 1. 组件挂载前 需要产生一个组件的实例 {} 组件的状态，组件的props，组件的生命周期
 		// 组件的优点： 逻辑复用，拆分方便维护，局部更新
-		const instance = (vnode.component = createComponentInstance(vnode))
+		const instance = (vnode.component = createComponentInstance(vnode, parent))
 		// 我们需要把创建的实例保存到vnode上，方便复用更新
 
 		// 2，组件的插槽，处理组件的属性 ...  给组件的实例设置属性
@@ -466,10 +464,10 @@ export function createRenderer(options) {
 		// 3.应该放到组件更新的逻辑中，不应该再写一次
 	}
 
-	function processComponent(n1, n2, container, anchor) {
+	function processComponent(n1, n2, container, anchor, parent) {
 		if (n1 === null) {
 			// 初始化组件
-			mountComponent(n2, container, anchor)
+			mountComponent(n2, container, anchor, parent)
 		} else {
 			// 更新组件 比较组件 插槽属性更新等
 			updateComponent(n1, n2)
@@ -487,7 +485,7 @@ export function createRenderer(options) {
 		hostRemove(vnode.el)
 	}
 
-	function patch(n1, n2, container, anchor = null) {
+	function patch(n1, n2, container, anchor = null, parent = null) {
 		// n1 老虚拟dom n2 新虚拟dom
 		// 判断标签名和对应的key是否相同，如果一样就说明是同一个节点
 		if (n1 && !isSameVNode(n1, n2)) {
@@ -504,16 +502,16 @@ export function createRenderer(options) {
 				ProcessText(n1, n2, container)
 				break
 			case Fragment:
-				ProcessFragment(n1, n2, container)
+				ProcessFragment(n1, n2, container, parent)
 				break
 
 			default:
-        if (shapeFlag & ShapeFlags.ELEMENT) {
-					processElement(n1, n2, container, anchor)
+				if (shapeFlag & ShapeFlags.ELEMENT) {
+					processElement(n1, n2, container, anchor, parent)
 					break
 				} else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
 					// 如果是状态组件
-					processComponent(n1, n2, container, anchor)
+					processComponent(n1, n2, container, anchor, parent)
 				}
 		}
 	}

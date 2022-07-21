@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render, Fragment, Text, ref, onMounted, getCurrentInstance, provide, inject, reactive } = VueRuntimeDOM
+
+    // 组件的渲染流程,类似原型链 父 instance.provides = { state } => 子 instance.provides = instance.parent.provides => 孙 instance.provides = instance.parent.provides ...
+
+    // parent 构建组件的父子关系 渲染的时候 我们是根据 父 -> 子 -> 孙 的顺序来渲染的
+
+    const childComponent = {
+      setup () {
+        const state = inject('state')
+        console.log(state);
+        console.log(getCurrentInstance());
+        // const state = reactive({ name: 'wumao', age: 13 })
+
+        return () => {
+          return h(Text, state.name + state.age)
+        }
+      }
+    }
+
+    // pinia的原理 其实就是弄了一个响应式数据，谁要用就注入即可
+    const VueComponent = { // instance.provide = {state}
+      setup () {
+        const state = reactive({ name: 'wumao', age: 13 })
+        provide('state', state)
+        setTimeout(() => {
+          state.age++
+        }, 1000);
+        return () => {
+          return h(childComponent)
+        }
+
+      }
+    }
+
+    render(h(VueComponent), app)
+
+  </script>
+</body>
+
+</html>

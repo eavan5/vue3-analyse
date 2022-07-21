@@ -45,11 +45,13 @@ var VueRuntimeDOM = (() => {
     effect: () => effect,
     getCurrentInstance: () => getCurrentInstance,
     h: () => h,
+    inject: () => inject,
     isSameVNode: () => isSameVNode,
     isVNode: () => isVNode,
     onBeforeMount: () => onBeforeMount,
     onMounted: () => onMounted,
     onUpdated: () => onUpdated,
+    provide: () => provide,
     proxyRefs: () => proxyRefs,
     reactive: () => reactive,
     ref: () => ref,
@@ -408,7 +410,7 @@ var VueRuntimeDOM = (() => {
   var instance = null;
   var getCurrentInstance = () => instance;
   var setCurrentInstance = (i) => instance = i;
-  function createComponentInstance(vnode) {
+  function createComponentInstance(vnode, parent) {
     instance = {
       data: null,
       vnode,
@@ -422,7 +424,9 @@ var VueRuntimeDOM = (() => {
       proxy: null,
       setupState: {},
       slots: {},
-      exposed: {}
+      exposed: {},
+      parent,
+      provides: parent ? parent.provides : /* @__PURE__ */ Object.create(null)
     };
     return instance;
   }
@@ -605,10 +609,10 @@ var VueRuntimeDOM = (() => {
       }
       return children[i];
     }
-    function mountChildren(children, container) {
+    function mountChildren(children, container, parent) {
       for (let i = 0; i < children.length; i++) {
         let child = normalizeVNode(children, i);
-        patch(null, child, container);
+        patch(null, child, container, parent);
       }
     }
     function patchProps(oldProps, newProps, el) {
@@ -623,7 +627,7 @@ var VueRuntimeDOM = (() => {
         }
       }
     }
-    function mountElement(vnode, container, anchor) {
+    function mountElement(vnode, container, anchor, parent) {
       let { type, props, children, shapeFlag } = vnode;
       let el = vnode.el = hostCreateElement(type);
       if (props) {
@@ -633,7 +637,7 @@ var VueRuntimeDOM = (() => {
         hostSetElementText(el, children);
       }
       if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
-        mountChildren(children, el);
+        mountChildren(children, el, parent);
       }
       hostInsert(el, container, anchor);
     }
@@ -731,7 +735,7 @@ var VueRuntimeDOM = (() => {
         }
       }
     }
-    function patchChildren(n1, n2, el) {
+    function patchChildren(n1, n2, el, parent) {
       let c1 = n1.children;
       let c2 = n2.children;
       const prevShapeFlag = n1.shapeFlag;
@@ -755,23 +759,23 @@ var VueRuntimeDOM = (() => {
             hostSetElementText(el, "");
           }
           if (nextShapeFlag & 16 /* ARRAY_CHILDREN */) {
-            mountChildren(c2, el);
+            mountChildren(c2, el, null);
           }
         }
       }
     }
-    function patchElement(n1, n2) {
+    function patchElement(n1, n2, parent) {
       let el = n2.el = n1.el;
       let oldProps = n1.props;
       let newProps = n2.props;
       patchProps(oldProps, newProps, el);
-      patchChildren(n1, n2, el);
+      patchChildren(n1, n2, el, parent);
     }
-    function processElement(n1, n2, container, anchor) {
+    function processElement(n1, n2, container, anchor, parent) {
       if (n1 === null) {
-        mountElement(n2, container, anchor);
+        mountElement(n2, container, anchor, parent);
       } else {
-        patchElement(n1, n2);
+        patchElement(n1, n2, parent);
       }
     }
     function updateComponentPreRender(instance2, next) {
@@ -779,11 +783,11 @@ var VueRuntimeDOM = (() => {
       instance2.vnode = next;
       updateProps(instance2, next, next.props);
     }
-    function ProcessFragment(n1, n2, container) {
+    function ProcessFragment(n1, n2, container, parent) {
       if (n1 === null) {
-        mountChildren(n2.children, container);
+        mountChildren(n2.children, container, parent);
       } else {
-        patchChildren(n1, n2, container);
+        patchChildren(n1, n2, container, parent);
       }
     }
     function setupRenderEffect(instance2, container, anchor) {
@@ -796,12 +800,12 @@ var VueRuntimeDOM = (() => {
               invokerFns(bm);
             }
             const subTree = render3.call(instance2.proxy);
-            patch(null, subTree, container, anchor);
+            patch(null, subTree, container, anchor, instance2);
             instance2.subTree = subTree;
-            instance2.isMounted = true;
             if (m) {
               invokerFns(m);
             }
+            instance2.isMounted = true;
           } else {
             const { u } = instance2;
             let next = instance2.next;
@@ -809,7 +813,7 @@ var VueRuntimeDOM = (() => {
               updateComponentPreRender(instance2, next);
             }
             const subTree = render3.call(instance2.proxy);
-            patch(instance2.subTree, subTree, container, anchor);
+            patch(instance2.subTree, subTree, container, anchor, instance2);
             if (u) {
               invokerFns(u);
             }
@@ -821,8 +825,8 @@ var VueRuntimeDOM = (() => {
       let update = instance2.update = effect2.run.bind(effect2);
       update();
     }
-    function mountComponent(vnode, container, anchor) {
-      const instance2 = vnode.component = createComponentInstance(vnode);
+    function mountComponent(vnode, container, anchor, parent) {
+      const instance2 = vnode.component = createComponentInstance(vnode, parent);
       setupComponent(instance2);
       setupRenderEffect(instance2, container, anchor);
     }
@@ -856,9 +860,9 @@ var VueRuntimeDOM = (() => {
         instance2.update();
       }
     }
-    function processComponent(n1, n2, container, anchor) {
+    function processComponent(n1, n2, container, anchor, parent) {
       if (n1 === null) {
-        mountComponent(n2, container, anchor);
+        mountComponent(n2, container, anchor, parent);
       } else {
         updateComponent(n1, n2);
       }
@@ -869,7 +873,7 @@ var VueRuntimeDOM = (() => {
       }
       hostRemove(vnode.el);
     }
-    function patch(n1, n2, container, anchor = null) {
+    function patch(n1, n2, container, anchor = null, parent = null) {
       if (n1 && !isSameVNode(n1, n2)) {
         unmount(n1);
         n1 = null;
@@ -880,14 +884,14 @@ var VueRuntimeDOM = (() => {
           ProcessText(n1, n2, container);
           break;
         case Fragment:
-          ProcessFragment(n1, n2, container);
+          ProcessFragment(n1, n2, container, parent);
           break;
         default:
           if (shapeFlag & 1 /* ELEMENT */) {
-            processElement(n1, n2, container, anchor);
+            processElement(n1, n2, container, anchor, parent);
             break;
           } else if (shapeFlag & 4 /* STATEFUL_COMPONENT */) {
-            processComponent(n1, n2, container, anchor);
+            processComponent(n1, n2, container, anchor, parent);
           }
       }
     }
@@ -937,6 +941,28 @@ var VueRuntimeDOM = (() => {
   var onBeforeMount = createInvoker("bm" /* BEFORE_MOUNT */);
   var onMounted = createInvoker("m" /* MOUNTED */);
   var onUpdated = createInvoker("u" /* UPDATED */);
+
+  // packages/runtime-core/src/apiInject.ts
+  function provide(key, value) {
+    if (!instance)
+      return;
+    let parentProvides = instance.parent && instance.parent.provide;
+    let currentProvides = instance.provides;
+    if (currentProvides === parentProvides) {
+      currentProvides = instance.provides = Object.create(parentProvides);
+    }
+    currentProvides[key] = value;
+  }
+  function inject(key, defaultValue) {
+    if (!instance)
+      return;
+    const provides = instance.parent && instance.parent.provides;
+    if (provides && key in provides) {
+      return provides[key];
+    } else {
+      return defaultValue;
+    }
+  }
 
   // packages/runtime-dom/src/modules/patchAttr.ts
   function patchAttr(el, key, nextValue) {
