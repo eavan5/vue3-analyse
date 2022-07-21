@@ -1,4 +1,4 @@
-import { isNumber, isString } from '@vue/shared'
+import { invokerFns, isNumber, isString } from '@vue/shared'
 import { ReactiveEffect } from '@vue/reactivity'
 import { createComponentInstance, setupComponent } from './components'
 import { createVNode, isSameVNode, ShapeFlags, Text, Fragment } from './createVNode'
@@ -362,12 +362,24 @@ export function createRenderer(options) {
 				// 初次渲染
 				if (!instance.isMounted) {
 					// 组件最终需要渲染的节点，就是subTree
+
+          const { bm, m } = instance
+          if (bm) {
+            invokerFns(bm)
+          }
+
 					// 这里面调用render会做依赖收集 稍后数据变化了就会触发update
 					const subTree = render.call(instance.proxy)
 					patch(null, subTree, container, anchor)
 					instance.subTree = subTree
-					instance.isMounted = true
-				} else {
+          instance.isMounted = true
+          
+          if (m) {
+            invokerFns(m)
+          }
+        } else {
+          const { u } = instance
+          
 					// 更新渲染
 					// 统一处理
 					let next = instance.next // next表示新的虚拟节点
@@ -377,7 +389,10 @@ export function createRenderer(options) {
 					}
 
 					const subTree = render.call(instance.proxy)
-					patch(instance.subTree, subTree, container, anchor)
+          patch(instance.subTree, subTree, container, anchor)
+          if (u) {
+            invokerFns(u)
+          }
 					instance.subTree = subTree
 				}
 			}
@@ -389,7 +404,7 @@ export function createRenderer(options) {
 		update()
 	}
 
-	function mountComponent(vnode, container, anchor) {
+  function mountComponent (vnode, container, anchor) {
 		// 1. 组件挂载前 需要产生一个组件的实例 {} 组件的状态，组件的props，组件的生命周期
 		// 组件的优点： 逻辑复用，拆分方便维护，局部更新
 		const instance = (vnode.component = createComponentInstance(vnode))

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render, Fragment, Text, ref, onMounted, getCurrentInstance } = VueRuntimeDOM
+
+    const VueComponent = {
+      setup () {
+        onMounted(() => { // 生命周期要将当前组件的实例收集起来 ，所以一定要放在setup函数中
+          const instance = getCurrentInstance()
+          console.log(instance);
+
+          console.log('mounted')
+        })
+        onMounted(() => { // 生命周期要将当前组件的实例收集起来 ，所以一定要放在setup函数中
+          console.log('mounted2')
+        })
+      },
+      render () {
+        return h('div', 'hello world')
+      }
+
+    }
+
+    //  处理h 函数 ，让h函数可以接受一个组件作为参数，渲染的时候 判断是否是组件对象，如果是组件对象，则使用组件对象的render方法
+
+    // console.log(h(VueComponent, { color: 'red' }, { default: h('div') }));
+    render(h(VueComponent), app)
+  </script>
+</body>
+
+</html>

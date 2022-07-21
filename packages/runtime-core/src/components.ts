@@ -2,8 +2,15 @@ import { hasOwn, isFunction, isObject } from '@vue/shared'
 import { proxyRefs, reactive } from '@vue/reactivity'
 import { ShapeFlags } from "./createVNode";
 
+
+export let  instance  = null
+
+export const getCurrentInstance = () => instance
+export const setCurrentInstance = i => instance = i
+
+
 export function createComponentInstance(vnode) {
-	let instance = {
+	 instance = {
 		data: null, // 组件的数据
 		vnode, // 标识实例对应的虚拟节点
 		subTree: null, // 组件对应render里面的渲染的虚拟节点
@@ -92,7 +99,6 @@ function initSlots (instance, children) {
 export function setupComponent(instance) {
 	// type就是用户传入的组件类型
 	let { type, props, children } = instance.vnode
-	// console.log(type)
 	let { data, render, setup } = type
   initProps(instance, props)
   initSlots(instance, children) // 映射表 名字对应的虚拟节点
@@ -125,8 +131,10 @@ export function setupComponent(instance) {
       }
 		}
 
+    setCurrentInstance(instance) // 2-设置暴露的全局实例
 		// setup在执行的时候有两个参数
-		const setupResult = setup(instance.props, context)
+    const setupResult = setup(instance.props, context)
+    setCurrentInstance(null) // 2-调用完之后清空 所以 getCurrentInstance() 只能在setup中获取
 
 		if (isFunction(setupResult)) {
 			// 如果setup返回的是render 那么就采用这个render
