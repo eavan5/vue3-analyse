@@ -42,6 +42,7 @@ var VueRuntimeDOM = (() => {
     computed: () => computed,
     createRenderer: () => createRenderer,
     createVNode: () => createVNode,
+    defineAsyncComponent: () => defineAsyncComponent,
     effect: () => effect,
     getCurrentInstance: () => getCurrentInstance,
     h: () => h,
@@ -962,6 +963,23 @@ var VueRuntimeDOM = (() => {
     } else {
       return defaultValue;
     }
+  }
+
+  // packages/runtime-core/src/defineAsyncComponent.ts
+  function defineAsyncComponent(loader) {
+    let Component = null;
+    return {
+      setup() {
+        const loaded = ref(false);
+        loader().then((componentV) => {
+          loaded.value = true;
+          Component = componentV;
+        });
+        return () => {
+          return loaded.value ? h(Component) : h(Fragment);
+        };
+      }
+    };
   }
 
   // packages/runtime-dom/src/modules/patchAttr.ts

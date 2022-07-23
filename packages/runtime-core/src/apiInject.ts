@@ -18,7 +18,7 @@ export function provide(key, value) {
 }
 
 // 前置条件 组件的实例的provides 指向的是parent的provides
-// 1） 我们先取出自己父亲身上的provides ，默认是父亲的provides,穿件一个新的provides 重新给自己的provides赋值
+// 1） 我们先取出自己父亲身上的provides ，默认是父亲的provides,创建一个新的provides 重新给自己的provides赋值
 // 2） 在上面添加属性
 // 3） 再次provide的时候， 拿父亲的provides，再取出自己的provides，此时不想等了，直接用自己身上的添加属性
 

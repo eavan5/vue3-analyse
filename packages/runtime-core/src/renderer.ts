@@ -369,7 +369,8 @@ export function createRenderer(options) {
 					}
 
 					// 这里面调用render会做依赖收集 稍后数据变化了就会触发update
-					const subTree = render.call(instance.proxy)
+          const subTree = render.call(instance.proxy) //subTree 是生成的vnode
+          
 					patch(null, subTree, container, anchor, instance) // 子组件的父亲就是当前的实例 这样就构建好父子关系
 					instance.subTree = subTree
 					if (m) {
@@ -405,7 +406,8 @@ export function createRenderer(options) {
 	function mountComponent(vnode, container, anchor, parent) {
 		// 1. 组件挂载前 需要产生一个组件的实例 {} 组件的状态，组件的props，组件的生命周期
 		// 组件的优点： 逻辑复用，拆分方便维护，局部更新
-		const instance = (vnode.component = createComponentInstance(vnode, parent))
+    const instance = (vnode.component = createComponentInstance(vnode, parent))
+    
 		// 我们需要把创建的实例保存到vnode上，方便复用更新
 
 		// 2，组件的插槽，处理组件的属性 ...  给组件的实例设置属性

@@ -11,3 +11,5 @@ export { getCurrentInstance, setCurrentInstance } from './components'
 export * from './lifecycle'
 
 export * from './apiInject'
+
+export { defineAsyncComponent } from './defineAsyncComponent'

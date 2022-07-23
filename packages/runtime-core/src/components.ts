@@ -104,7 +104,6 @@ export function setupComponent(instance) {
 	let { data, render, setup } = type
 	initProps(instance, props)
 	initSlots(instance, children) // 映射表 名字对应的虚拟节点
-	// debugger
 
 	instance.proxy = new Proxy(instance, instanceProxy)
 
