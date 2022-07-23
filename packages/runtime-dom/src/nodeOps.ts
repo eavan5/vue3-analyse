@@ -32,5 +32,5 @@ export const nodeOps = {
 	setElementText(element, text) {
 		element.textContent = text // 这边是设置元素节点的内容 类似innerHTML
 	},
-	patchProp
+	patchProp,
 }

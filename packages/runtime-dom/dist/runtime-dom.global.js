@@ -638,6 +638,7 @@ var VueRuntimeDOM = (() => {
         hostSetElementText(el, children);
       }
       if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+        debugger;
         mountChildren(children, el, parent);
       }
       hostInsert(el, container, anchor);
@@ -869,10 +870,13 @@ var VueRuntimeDOM = (() => {
       }
     }
     function unmount(vnode) {
+      let { shapeFlag, component } = vnode;
       if (vnode === Fragment) {
         return unmountChildren(vnode.children);
+      } else if (shapeFlag & 6 /* COMPONENT */) {
+        return unmount(component.subTree);
       }
-      hostRemove(vnode.el);
+      vnode.el && hostRemove(vnode.el);
     }
     function patch(n1, n2, container, anchor = null, parent = null) {
       if (n1 && !isSameVNode(n1, n2)) {
@@ -966,17 +970,62 @@ var VueRuntimeDOM = (() => {
   }
 
   // packages/runtime-core/src/defineAsyncComponent.ts
-  function defineAsyncComponent(loader) {
+  function defineAsyncComponent(loaderOrOptions) {
+    if (typeof loaderOrOptions === "function") {
+      loaderOrOptions = {
+        loader: loaderOrOptions
+      };
+    }
     let Component = null;
     return {
       setup() {
+        const { loader, timeout, errorComponent, delay, loadingComponent, onError } = loaderOrOptions;
         const loaded = ref(false);
-        loader().then((componentV) => {
+        const error = ref(false);
+        const loading = ref(!!delay);
+        if (timeout) {
+          setTimeout(() => {
+            error.value = true;
+          }, timeout);
+        }
+        if (delay) {
+          setTimeout(() => {
+            loading.value = false;
+          }, delay);
+        } else {
+          loading.value = false;
+        }
+        function load() {
+          return loader().catch((err) => {
+            if (onError) {
+              return new Promise((resolve, reject) => {
+                const retry = () => resolve(load());
+                const fail = () => reject();
+                onError(retry, fail);
+              });
+            } else {
+              throw err;
+            }
+          });
+        }
+        load().then((componentV) => {
           loaded.value = true;
           Component = componentV;
+        }).catch((err) => {
+          error.value = true;
+        }).finally(() => {
+          loading.value = false;
         });
         return () => {
-          return loaded.value ? h(Component) : h(Fragment);
+          if (loaded.value) {
+            return h(Component);
+          } else if (error.value && errorComponent) {
+            return h(errorComponent);
+          } else if (!loading.value && loadingComponent) {
+            return h(loadingComponent);
+          } else {
+            return h(Fragment, []);
+          }
         };
       }
     };

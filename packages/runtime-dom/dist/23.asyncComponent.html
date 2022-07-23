@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render, Fragment, Text, ref, onMounted, getCurrentInstance, provide, inject, reactive, defineAsyncComponent } = VueRuntimeDOM
+
+    let asyncComponent = defineAsyncComponent({
+      // https://v3.cn.vuejs.org/api/global-api.html#defineasynccomponent
+      loader: async () => {
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve()
+          }, 3000);
+        })
+        return import('./asyncComponent.js').then(res => res.default)
+      },
+      timeout: 2000,
+      errorComponent: {
+        render: () => {
+          return h('div', '出错了')
+        }
+      },
+      delay: 1000,
+      loadingComponent: {
+        render: () => {
+          return h('div', '加载中')
+        }
+      },
+      onError (retry, fail) {
+        console.log('失败重试中');
+        retry()
+      }
+    })
+    render(h(asyncComponent), app)
+  </script>
+</body>
+
+</html>
