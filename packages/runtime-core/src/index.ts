@@ -13,3 +13,5 @@ export * from './lifecycle'
 export * from './apiInject'
 
 export { defineAsyncComponent } from './defineAsyncComponent'
+
+export * from './KeepAlive'

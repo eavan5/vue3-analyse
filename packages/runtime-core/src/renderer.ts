@@ -117,8 +117,6 @@ export function createRenderer(options) {
 			hostSetElementText(el, children)
 		}
 		if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-			debugger
-
 			mountChildren(children, el, parent)
 		}
 		hostInsert(el, container, anchor)
@@ -135,9 +133,9 @@ export function createRenderer(options) {
 		}
 	}
 
-	function unmountChildren(children) {
+	function unmountChildren(children, parent) {
 		children.forEach(child => {
-			unmount(child)
+			unmount(child, parent)
 		})
 	}
 
@@ -197,7 +195,7 @@ export function createRenderer(options) {
 			//  a b c d
 			if (i <= e1) {
 				while (i <= e1) {
-					unmount(c1[i])
+					unmount(c1[i], parent)
 					i++
 				}
 			}
@@ -224,7 +222,7 @@ export function createRenderer(options) {
 				const oldVnode = c1[i]
 				const newIndex = keyToNewIndexMap.get(oldVnode.key) // 用老的去找，看看新的里面有没有
 				if (newIndex == null) {
-					unmount(oldVnode)
+					unmount(oldVnode, parent)
 				} else {
 					// 新的老的都有，我就记录下来当前对应的位置 就可以判断出哪些数据不需要移动
 					// 用新的位置和老的位置做一个关联
@@ -287,7 +285,7 @@ export function createRenderer(options) {
 		if (nextShapeFlag & ShapeFlags.TEXT_CHILDREN) {
 			if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
 				//  文本	数组	（删除老儿子，设置文本内容）
-				unmountChildren(c1)
+				unmountChildren(c1, parent)
 			}
 			if (c1 !== c2) {
 				hostSetElementText(el, c2)
@@ -303,7 +301,7 @@ export function createRenderer(options) {
 				} else {
 					// 又不是数组且不是文本
 					// 空	数组	（删除所有儿子）
-					unmountChildren(c1)
+					unmountChildren(c1, parent)
 				}
 			} else {
 				// 数组	文本	（清空文本，进行挂载）
@@ -345,6 +343,7 @@ export function createRenderer(options) {
 		instance.next = null
 		instance.vnode = next // 更新虚拟节点和next属性
 		updateProps(instance, next, next.props)
+		Object.assign(instance.slots, next.children) // 用新节点的插槽覆盖掉老节点的插槽
 	}
 
 	function ProcessFragment(n1, n2, container, parent) {
@@ -410,6 +409,15 @@ export function createRenderer(options) {
 		// 组件的优点： 逻辑复用，拆分方便维护，局部更新
 		const instance = (vnode.component = createComponentInstance(vnode, parent))
 
+		// 稍后渲染的时候会用到方法
+		instance.ctx.renderer = {
+			createElement: hostCreateElement,
+			move(vnode, container) {
+				hostInsert(vnode.component.subTree.el, container)
+			},
+			unmount,
+		}
+
 		// 我们需要把创建的实例保存到vnode上，方便复用更新
 
 		// 2，组件的插槽，处理组件的属性 ...  给组件的实例设置属性
@@ -447,7 +455,9 @@ export function createRenderer(options) {
 		const prevProps = n1.props
 		const nextProps = n2.props
 		// 插槽更新，就返回true调用update
-		return hasChange(prevProps, nextProps) // 如果属性有变化说明需要更新
+		if (hasChange(prevProps, nextProps)) return true // 如果属性有变化说明需要更新
+
+		if (n1.children || n2.children) return true // 如果有子节点就需要更新 插槽
 	}
 
 	function updateComponent(n1, n2) {
@@ -470,10 +480,17 @@ export function createRenderer(options) {
 
 	function processComponent(n1, n2, container, anchor, parent) {
 		if (n1 === null) {
-			// 初始化组件
-			mountComponent(n2, container, anchor, parent)
+			if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+				console.log('不用渲染了')
+				// 当第一次component1卸载时 需要讲dom元素移动到内存中，下次再渲染我们再将他拿回来
+				parent.ctx.active(n2, container, anchor)
+			} else {
+				// 初始化组件
+				mountComponent(n2, container, anchor, parent)
+			}
 		} else {
 			// 更新组件 比较组件 插槽属性更新等
+			// debugger
 			updateComponent(n1, n2)
 		}
 	}
@@ -481,14 +498,19 @@ export function createRenderer(options) {
 	//  组件初渲染的过程 1. 创建实例 这里面有一个代理对象会代理data，props，attrs 2. 给组件实例赋值，给instance赋值 3.创建一个组件的effect运行
 	// 组件更新过程： 1.组件的状态发生变化会触发自己的effect重新执行 2.属性更新了，会执行updateComponent,内部去比较要不要更新，如果需要更新会调用组件的update方法，在调用render之前，更新属性
 
-	function unmount(vnode) {
+	function unmount(vnode, parent) {
 		let { shapeFlag, component } = vnode
-		if (vnode === Fragment) {
+
+		if (shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+			parent.ctx.deactivate(vnode)
+		}
+
+		if (vnode.type === Fragment) {
 			// Fragment删除所有子节点
-			return unmountChildren(vnode.children)
+			return unmountChildren(vnode.children, parent)
 		} else if (shapeFlag & ShapeFlags.COMPONENT) {
 			// _vnode 组件的虚拟节点 subTree是组件渲染的内容
-			return unmount(component.subTree) // 如果是组件，卸载的应该是subTree，而不是自己
+			return unmount(component.subTree, parent) // 如果是组件，卸载的应该是subTree，而不是自己
 		}
 		vnode.el && hostRemove(vnode.el)
 	}
@@ -498,7 +520,7 @@ export function createRenderer(options) {
 		// 判断标签名和对应的key是否相同，如果一样就说明是同一个节点
 		if (n1 && !isSameVNode(n1, n2)) {
 			// 说明不是同一个节点就不能复用，直接去走n2的挂载流程
-			unmount(n1)
+			unmount(n1, parent)
 			n1 = null //将n1 重置为null 此时会走n2的初始化
 		}
 
@@ -528,7 +550,7 @@ export function createRenderer(options) {
 		if (vnode == null) {
 			// 卸载元素
 			if (container._vnode) {
-				unmount(container._vnode)
+				unmount(container._vnode, null)
 			}
 		} else {
 			// 更新

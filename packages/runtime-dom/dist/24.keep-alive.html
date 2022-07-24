@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../../node_modules//@vue/runtime-dom/dist/runtime-dom.global.js"></script> -->
+  <script src="./runtime-dom.global.js"></script>
+  <div id="app"></div>
+  <script>
+    const { h, createVNode, createRender, render, Fragment, Text, ref, onMounted, getCurrentInstance, provide, inject, reactive, KeepAlive } = VueRuntimeDOM
+
+    // 缓存 vnode
+    // 为了性能考虑，我们弄一个盒子，将渲染的结果临时的移动到内存中，如果后续切换回来，再从内存中拿出来即可
+    const component1 = {
+      name: 'c1',
+      render () {
+        console.log('component1 render')
+        return h('div', 'component1')
+      }
+    }
+    const component2 = {
+      name: 'c2',
+      render () {
+        console.log('component2 render')
+        return h('div', 'component2')
+      }
+    }
+    const component3 = {
+      name: 'c3',
+      render () {
+        console.log('component3 render')
+        return h('div', 'component3')
+      }
+    }
+
+    render(h(KeepAlive, null, {
+      default: () => h(component3)
+    }), app)
+
+    render(h(KeepAlive, null, {
+      default: () => h(component1)
+    }), app)
+
+    setTimeout(() => {
+      render(h(KeepAlive, null, {
+        default: () => h(component2)
+      }), app)
+
+    }, 1000);
+    setTimeout(() => {
+      render(h(KeepAlive, null, {
+        default: () => h(component2)
+      }), app)
+
+    }, 1200);
+
+    setTimeout(() => {
+      // debugger
+      render(h(KeepAlive, null, {
+        default: () => h(component3)
+      }), app)
+    }, 2000);
+
+    // setTimeout(() => {
+    //   console.log(3);
+    //   render(h(KeepAlive, null, {
+    //     default: () => h(component2)
+    //   }), app)
+    // }, 3000);
+  </script>
+</body>
+
+</html>
