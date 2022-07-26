@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
+  <!-- <script src="../../../node_modules/@vue/reactivity/dist//reactivity.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
+
+  <div id="app1"></div>
+  <div id="app2"></div>
+  <button onclick="stop1()">暂停1</button>
+  <button onclick="stop2()">暂停2</button>
+  <script>
+    const { effect, reactive, ref, toRef, toRefs, effectScope } = VueReactivity
+
+    // pinia 里面卸载的时候 想停止所有的依赖关系
+    const scope = effectScope() //可以产生一个作用域来收集effect
+
+    scope.run(() => {
+      const state = reactive({
+        count: 1
+      })
+      setInterval(() => {
+        state.count++
+      }, 1000);
+      effect(() => {
+        app1.innerHTML = state.count
+      })
+
+
+      const inner = effectScope(true) // 如果加了true说明就是独立的进程 不受外面的作用域影响
+      inner.run(() => {
+        const state = reactive({
+          count: 1
+        })
+        setInterval(() => {
+          state.count++
+        }, 1000);
+        effect(() => {
+          app2.innerHTML = state.count
+        })
+      })
+
+    })
+
+
+    function stop1 () {
+      scope.stop()
+    }
+    function stop2 () {
+      inner.stop()
+    }
+  </script>
+</body>
+
+</html>

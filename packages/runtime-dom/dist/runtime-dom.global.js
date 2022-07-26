@@ -40,11 +40,13 @@ var VueRuntimeDOM = (() => {
     ReactiveEffect: () => ReactiveEffect,
     ShapeFlags: () => ShapeFlags,
     Text: () => Text,
+    activeEffectScope: () => activeEffectScope,
     computed: () => computed,
     createRenderer: () => createRenderer,
     createVNode: () => createVNode,
     defineAsyncComponent: () => defineAsyncComponent,
     effect: () => effect,
+    effectScope: () => effectScope,
     getCurrentInstance: () => getCurrentInstance,
     h: () => h,
     inject: () => inject,
@@ -56,6 +58,7 @@ var VueRuntimeDOM = (() => {
     provide: () => provide,
     proxyRefs: () => proxyRefs,
     reactive: () => reactive,
+    recordEffectScope: () => recordEffectScope,
     ref: () => ref,
     render: () => render,
     setCurrentInstance: () => setCurrentInstance,
@@ -146,6 +149,7 @@ var VueRuntimeDOM = (() => {
       this.active = true;
       this.parent = null;
       this.deps = [];
+      recordEffectScope(this);
     }
     run() {
       if (!this.active) {
@@ -385,6 +389,47 @@ var VueRuntimeDOM = (() => {
       }
     }
   };
+
+  // packages/reactivity/src/effectScope.ts
+  var activeEffectScope;
+  function recordEffectScope(effect2) {
+    if (activeEffectScope && activeEffectScope.active) {
+      activeEffectScope.effects.push(effect2);
+    }
+  }
+  var EffectScope = class {
+    constructor(detached) {
+      this.effects = [];
+      this.active = true;
+      this.scopes = [];
+      if (!detached && activeEffectScope) {
+        activeEffectScope.scopes.push(this);
+      }
+    }
+    run(fn) {
+      if (this.active) {
+        try {
+          this.parent = activeEffectScope;
+          activeEffectScope = this;
+          return fn();
+        } finally {
+          activeEffectScope = this.parent;
+        }
+      }
+    }
+    stop() {
+      if (this.active) {
+        this.active = false;
+        this.effects.forEach((effect2) => effect2.stop());
+      }
+      if (this.scopes) {
+        this.scopes.forEach((scopeEffect) => scopeEffect.stop());
+      }
+    }
+  };
+  function effectScope(detached = false) {
+    return new EffectScope(detached);
+  }
 
   // packages/runtime-core/src/h.ts
   function h(type, propsOrChildren, children) {
@@ -877,7 +922,6 @@ var VueRuntimeDOM = (() => {
     function processComponent(n1, n2, container, anchor, parent2) {
       if (n1 === null) {
         if (n2.shapeFlag & 512 /* COMPONENT_KEPT_ALIVE */) {
-          console.log("\u4E0D\u7528\u6E32\u67D3\u4E86");
           parent2.ctx.active(n2, container, anchor);
         } else {
           mountComponent(n2, container, anchor, parent2);

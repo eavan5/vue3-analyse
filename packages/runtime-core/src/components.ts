@@ -33,9 +33,11 @@ export function createComponentInstance(vnode, parent) {
 }
 
 function initProps(instance, rawProps) {
+	// rawProps是用户传入的props
 	const props = {}
 	const attrs = {}
 	const options = instance.propsOptions
+	// options是组件接收的props
 
 	if (rawProps) {
 		for (const key in rawProps) {

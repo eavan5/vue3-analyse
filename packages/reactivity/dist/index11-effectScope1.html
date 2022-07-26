@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
+  <script src="../../../node_modules/@vue/reactivity/dist//reactivity.global.js"></script>
+  <!-- <script src="./reactivity.global.js"></script> -->
+
+  <div id="app"></div>
+  <button onclick="stop()">暂停</button>
+  <script>
+    const { effect, reactive, ref, toRef, toRefs } = VueReactivity
+
+    const state = reactive({
+      count: 1
+    })
+
+    const runner = effect(() => {
+      app.innerHTML = state.count
+    })
+
+    setInterval(() => {
+      state.count++
+    }, 1000);
+
+    function stop () {
+      console.log(111);
+      runner.effect.stop()
+    }
+  </script>
+</body>
+
+</html>

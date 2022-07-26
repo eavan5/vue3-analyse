@@ -3,6 +3,8 @@
 // 考的是数据结构 weakMap ： { map : new Set()}
 // 稍后数据变化的时候 找到proxy的对象对应的map 通过key属性找到对应的set中的effect执行
 
+import { recordEffectScope } from './index'
+
 export let activeEffect = undefined
 
 function clearEffect(effect) {
@@ -25,6 +27,7 @@ export class ReactiveEffect {
 	//   this.fn = fn
 	// }
 	constructor(public fn, public scheduler?) {
+		recordEffectScope(this)
 		// 等价上面
 	}
 
@@ -84,7 +87,7 @@ export function triggerEffects(effects) {
 	}
 }
 
-export function track (target, key) {
+export function track(target, key) {
 	if (activeEffect) {
 		let depsMap = targetMap.get(target)
 		if (!depsMap) {
@@ -98,10 +101,10 @@ export function track (target, key) {
 	}
 }
 
-export function trackEffects (deps) {
-  let shouldTrack = !deps.has(activeEffect)
-  
-  if (shouldTrack&& activeEffect) {
+export function trackEffects(deps) {
+	let shouldTrack = !deps.has(activeEffect)
+
+	if (shouldTrack && activeEffect) {
 		deps.add(activeEffect) // 进行依赖收集
 		activeEffect.deps.push(deps) // 3.反向收集依赖，当执行了effect之后需要反向清除依赖
 	}

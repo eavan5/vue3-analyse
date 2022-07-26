@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+</head>
+
+<body>
+  <!-- <script src="../../node_modules/vue/dist/vue.global.js"></script> -->
+  <!-- <script src="../../../node_modules/@vue/reactivity/dist//reactivity.global.js"></script> -->
+  <script src="./reactivity.global.js"></script>
+
+  <div id="app"></div>
+  <button onclick="stop()">暂停</button>
+  <script>
+    const { effect, reactive, ref, toRef, toRefs, effectScope } = VueReactivity
+
+    // pinia 里面卸载的时候 想停止所有的依赖关系
+    const scope = effectScope() //可以产生一个作用域来收集effect
+
+    scope.run(() => {
+      const state = reactive({
+        count: 1
+      })
+      setInterval(() => {
+        state.count++
+      }, 1000);
+      effect(() => {
+        app.innerHTML = state.count
+      })
+
+    })
+
+
+    function stop () {
+      scope.stop()
+    }
+  </script>
+</body>
+
+</html>

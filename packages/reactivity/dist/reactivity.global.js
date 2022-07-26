@@ -21,10 +21,13 @@ var VueReactivity = (() => {
   var src_exports = {};
   __export(src_exports, {
     ReactiveEffect: () => ReactiveEffect,
+    activeEffectScope: () => activeEffectScope,
     computed: () => computed,
     effect: () => effect,
+    effectScope: () => effectScope,
     proxyRefs: () => proxyRefs,
     reactive: () => reactive,
+    recordEffectScope: () => recordEffectScope,
     ref: () => ref,
     toReactive: () => toReactive,
     toRef: () => toRef,
@@ -48,6 +51,7 @@ var VueReactivity = (() => {
       this.active = true;
       this.parent = null;
       this.deps = [];
+      recordEffectScope(this);
     }
     run() {
       if (!this.active) {
@@ -294,6 +298,47 @@ var VueReactivity = (() => {
       }
     }
   };
+
+  // packages/reactivity/src/effectScope.ts
+  var activeEffectScope;
+  function recordEffectScope(effect2) {
+    if (activeEffectScope && activeEffectScope.active) {
+      activeEffectScope.effects.push(effect2);
+    }
+  }
+  var EffectScope = class {
+    constructor(detached) {
+      this.effects = [];
+      this.active = true;
+      this.scopes = [];
+      if (!detached && activeEffectScope) {
+        activeEffectScope.scopes.push(this);
+      }
+    }
+    run(fn) {
+      if (this.active) {
+        try {
+          this.parent = activeEffectScope;
+          activeEffectScope = this;
+          return fn();
+        } finally {
+          activeEffectScope = this.parent;
+        }
+      }
+    }
+    stop() {
+      if (this.active) {
+        this.active = false;
+        this.effects.forEach((effect2) => effect2.stop());
+      }
+      if (this.scopes) {
+        this.scopes.forEach((scopeEffect) => scopeEffect.stop());
+      }
+    }
+  };
+  function effectScope(detached = false) {
+    return new EffectScope(detached);
+  }
   return __toCommonJS(src_exports);
 })();
 //# sourceMappingURL=reactivity.global.js.map

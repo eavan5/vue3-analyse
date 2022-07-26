@@ -481,7 +481,7 @@ export function createRenderer(options) {
 	function processComponent(n1, n2, container, anchor, parent) {
 		if (n1 === null) {
 			if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
-				console.log('不用渲染了')
+				// keep-alive组件则不需要去卸载
 				// 当第一次component1卸载时 需要讲dom元素移动到内存中，下次再渲染我们再将他拿回来
 				parent.ctx.active(n2, container, anchor)
 			} else {
