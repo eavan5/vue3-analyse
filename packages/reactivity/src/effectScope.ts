@@ -1,5 +1,9 @@
 export let activeEffectScope
 
+/**
+ * 
+ * @param effect 传入的副作用函数，用来记录effect的成绩包含关系
+ */
 export function recordEffectScope(effect) {
 	if (activeEffectScope && activeEffectScope.active) {
 		activeEffectScope.effects.push(effect)

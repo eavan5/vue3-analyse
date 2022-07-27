@@ -7,6 +7,10 @@ import { recordEffectScope } from './index'
 
 export let activeEffect = undefined
 
+/**
+ * 
+ * @param effect ReactiveEffect实例
+ */
 function clearEffect(effect) {
 	// 当执行effect的时候，我们需要重新建立起新的依赖收集，否则会导致重复渲染发生
 	// 所以需要清理effect中存入属性中set中的effect
@@ -22,18 +26,18 @@ function clearEffect(effect) {
 export class ReactiveEffect {
 	public active = true
 	public parent = null
-	public deps = [] // 3.effect中使用了那些属性，后续清理的时候需要使用
+	public deps = [] // 3.effect中收集了那些属性，后续清理的时候需要使用
 	// constructor(public fn) {
 	//   this.fn = fn
 	// }
-	constructor(public fn, public scheduler?) {
+  constructor(public fn, public scheduler?) { 
+    // 等价上面的this.xxx = xxx
 		recordEffectScope(this)
-		// 等价上面
 	}
 
 	run() {
 		// 依赖收集 让属性和effect产生关联
-		if (!this.active) {
+		if (!this.active) { // 表示该effect不做响应式处理
 			return this.fn()
 		} else {
 			try {
@@ -59,7 +63,14 @@ export class ReactiveEffect {
 // 将对象里面的key去关联对应的effect，一个属性可以对应多个effect
 
 // 外层用一个map {object: {name: [effect, effect], age: [effect, effect]}}
-const targetMap = new WeakMap()
+const targetMap = new WeakMap() // 定一个全局的map去存储映射关系
+
+/**
+ * 触发该obj的key对应的effect
+ * @param target reactive（obj）里面的obj
+ * @param key 对应的key
+ * @returns 
+ */
 export function trigger(target, key) {
 	let depsMap = targetMap.get(target)
 	if (!depsMap) {
@@ -69,6 +80,10 @@ export function trigger(target, key) {
 	triggerEffects(effects)
 }
 
+/**
+ * 触发effect集合
+ * @param effects effect的集合
+ */
 export function triggerEffects(effects) {
 	if (effects) {
 		// 4.重新生成一个新的effect，目的是为了防止一边清空依赖 重新执行effect.run() 又添加遍历老的effects导致一边删除一边新增 // index3-分支切换
@@ -87,6 +102,11 @@ export function triggerEffects(effects) {
 	}
 }
 
+/**
+ * 
+ * @param target reactive(obj)里面的obj对象
+ * @param key obj对应的key
+ */
 export function track(target, key) {
 	if (activeEffect) {
 		let depsMap = targetMap.get(target)
@@ -101,6 +121,11 @@ export function track(target, key) {
 	}
 }
 
+/**
+ * 1.传入一个deps（Set）去接收当前活动的的effect（active Effect）
+ * 2.并且让活动的effect将当前的这个对象的收集到的effect的Set集合再反向收集到activeEffect的deps中
+ * @param deps Set实例
+ */
 export function trackEffects(deps) {
 	let shouldTrack = !deps.has(activeEffect)
 
@@ -111,11 +136,17 @@ export function trackEffects(deps) {
 	// 3.让属性去记住所用到的effect是谁，但是哪个effect对应哪个属性应该也要知道（后期需要一些清理工作）
 }
 
+/**
+ * 
+ * @param fn 传入的副作用函数的回调
+ * @param options 一些配置项，比如调度器scheduler
+ * @returns 
+ */
 export function effect(fn, options: Record<string, any> = {}) {
 	// 将用户传递的函数变成响应式的effect
 	const _effect = new ReactiveEffect(fn, options.scheduler)
-	_effect.run()
-	const runner = _effect.run.bind(_effect)
+	_effect.run() // 先去执行一次，去进行依赖收集
+	const runner = _effect.run.bind(_effect) 
 	runner.effect = _effect // 暴露effect的实例
 	return runner // 用户可以手动调用runner重新执行
 }

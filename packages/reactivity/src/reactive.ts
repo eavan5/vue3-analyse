@@ -17,7 +17,7 @@ export function reactive (target) {
     return target
   }
 
-  const existing = reactiveMap.get(target)
+  const existing = reactiveMap.get(target) // 防止出现reactive(reactive(obj))这种情况发生
   if (existing) return existing
 
   const proxy = new Proxy(target, baseHandler)
