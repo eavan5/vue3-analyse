@@ -12,7 +12,6 @@ export function computed(getterOrOptions) {
 		getter = getterOrOptions.get
 		setter = getterOrOptions.set || fn
 	}
-
 	return new ComputedRefImpl(getter, setter)
 }
 
@@ -24,10 +23,11 @@ class ComputedRefImpl {
 	private __v_isRef = true
 	constructor(getter, public setter) {
 		// new ReactiveEffect的时候会执行getter，会让getter对应的依赖项去收集当前的计算属性的effect
-		this.effect = new ReactiveEffect(getter, () => {
+    this.effect = new ReactiveEffect(getter, () => {
+      // 调度器是在该computed里面的依赖项发生变化的时候触发的（会重新走到set）
 			if (!this._dirty) {
 				this._dirty = true
-				// 通知自己收集的effect去执行
+				// 当有值修改时去触发对应的effect
 				triggerEffects(this.deps)
 			}
 		}) // 拿到effect实例让函数执行
@@ -39,7 +39,7 @@ class ComputedRefImpl {
 		}
 
 		if (this._dirty) {
-			// 只有当dirty为真才会执行
+			// 只有当dirty为真才会执行 当计算属性的值发生变化时会调用上面的调度器，并且把dirty打开，然后重新执行getter获取新的值
 			this._dirty = false
 			this._value = this.effect.run() // 当run的时候会让里面的属性effect把计算属性的effect给收集，下次触发的时候可以去执行计算属性的effect
 		}

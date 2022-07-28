@@ -2,7 +2,7 @@ export let activeEffectScope
 
 /**
  * 
- * @param effect 传入的副作用函数，用来记录effect的成绩包含关系
+ * @param effect 传入的副作用函数，用来记录effect的层级包含关系
  */
 export function recordEffectScope(effect) {
 	if (activeEffectScope && activeEffectScope.active) {
