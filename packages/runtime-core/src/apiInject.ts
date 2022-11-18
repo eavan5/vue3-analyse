@@ -10,7 +10,7 @@ export function provide(key, value) {
 	if (currentProvides === parentProvides) {
 		// provides: parent ? parent.provides : Object.create(null), 默认是相同的
 		//  说明是第一次
-		currentProvides = instance.provides = Object.create(parentProvides) // 这样就可以让子不能修改父provide
+		currentProvides = instance.provides = Object.create(parentProvides) // 这样就可以让子不能轻易修改父provide，让层级更加清晰
 	}
 	// 下一个儿子会获取所有的provide
 

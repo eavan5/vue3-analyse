@@ -1,17 +1,33 @@
 import { isReactive } from './baseHandler'
 import { ReactiveEffect } from './effect'
 
-export function watch(getter, cb) {
-	if (isReactive(getter)) {
+export function watch(getter, cb, options = {}) {
+	doWatch(getter, cb, options)
+}
+
+export function watchEffect(effect, options) {
+	return doWatch(effect, null, options)
+}
+
+function doWatch(source, callback, options = {}) {
+	let getter
+	if (isReactive(source)) {
 		// 判断是否是响应式对象
 		// 创建一个effect，让effect收集getter的所有属性
-		getter = () => getter
+		getter = () => source
+	} else {
+		getter = source // 当是函数的时候
 	}
+
 	let oldValue
 	const job = () => {
-		let newValue = effect.run() // 数据变化之后重新调用effect.run函数会获得最新的值
-		cb(newValue, oldValue)
-		oldValue = newValue
+		if (callback) {
+			let newValue = effect.run() // 数据变化之后重新调用effect.run函数会获得最新的值
+			callback(newValue, oldValue)
+			oldValue = newValue
+		} else {
+			effect.run() // 调用run方法，重新收集依赖
+		}
 	}
 	// console.log(getter)
 

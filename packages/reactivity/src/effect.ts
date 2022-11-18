@@ -18,9 +18,9 @@ function clearEffect(effect) {
 	// 每次执行前都需要将effect中 对应属性的set集合都清理掉
 	const { deps } = effect // 存的是每个属性的set
 	for (let i = 0; i < deps.length; i++) {
-		deps[i].delete(effect)
+		deps[i].delete(effect) // 让依赖项中的effect删除掉
 	}
-	effect.deps.length = 0
+	effect.deps.length = 0 // 清空数组
 }
 
 export class ReactiveEffect {
@@ -91,9 +91,9 @@ export function triggerEffects(effects) {
 		effects &&
 			effects.forEach(effect => {
 				if (effect !== activeEffect) {
-					// 4 . 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）
+					// 4 . 这里面是防止effect的回调又调用自己 导致被无限调用（调用栈溢出）（ps.也就是当前effect里面再更改当前effect收集的属性，这样就死循环了）
 					if (effect.scheduler) {
-						effect.scheduler() // 可以提供一个调用函数，用户实现自己的逻辑
+						effect.scheduler() // 可以提供一个调用函数，用户实现自己的逻辑,组件更新也是用的这个方法
 					} else {
 						effect.run() // 4. 数据变化了，就执行里面的effect·
 					}
@@ -146,7 +146,7 @@ export function effect(fn, options: Record<string, any> = {}) {
 	// 将用户传递的函数变成响应式的effect
 	const _effect = new ReactiveEffect(fn, options.scheduler)
 	_effect.run() // 先去执行一次，去进行依赖收集
-	const runner = _effect.run.bind(_effect) 
+	const runner = _effect.run.bind(_effect)  // 保证是当前的effect
 	runner.effect = _effect // 暴露effect的实例
 	return runner // 用户可以手动调用runner重新执行
 }
