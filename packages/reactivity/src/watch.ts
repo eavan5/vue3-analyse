@@ -19,11 +19,15 @@ function doWatch(source, callback, options = {}) {
 		getter = source // 当是函数的时候
 	}
 
-	let oldValue
+	let oldValue, cleanup
+	let onCleanup = fn => {
+		cleanup = fn
+	}
 	const job = () => {
 		if (callback) {
 			let newValue = effect.run() // 数据变化之后重新调用effect.run函数会获得最新的值
-			callback(newValue, oldValue)
+			if (cleanup) cleanup() // 如果有cleanup函数，就执行，清除上一次的副作用
+			callback(newValue, oldValue, onCleanup)
 			oldValue = newValue
 		} else {
 			effect.run() // 调用run方法，重新收集依赖
